@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mega Store Pro | ASystem</title>
+    <title>Mega Store Pro | Closed System</title>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 576 512'%3E%3Cpath fill='%236366f1' d='M0 24C0 10.7 10.7 0 24 0H69.5c22 0 41.5 12.8 50.6 32h411c26.3 0 45.5 25 38.6 50.4l-41 152.3c-8.5 31.4-37 53.3-69.5 53.3H170.7l5.4 28.5c2.2 11.3 12.1 19.5 23.6 19.5H488c13.3 0 24 10.7 24 24s-10.7 24-24 24H199.7c-34.6 0-64.3-24.6-70.7-58.5L77.4 54.5c-.7-3.8-4-6.5-7.9-6.5H24C10.7 48 0 37.3 0 24zM128 464a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zm336-48a48 48 0 1 1 0 96 48 48 0 1 1 0-96z'/%3E%3C/svg%3E">
 
@@ -1490,7 +1490,7 @@ function applyRBAC() {
         
         document.getElementById("todoSection").classList.remove("hidden");
         document.getElementById("todoInputArea").classList.remove("hidden");
-        document.getElementById("sec-manage-services").classList.remove("hidden"); // Visible but limited inside function
+        document.getElementById("sec-manage-services").classList.remove("hidden"); 
         
         document.getElementById("btnStock").classList.remove("hidden");
         document.getElementById("btnUndo").classList.remove("hidden");
@@ -1505,12 +1505,13 @@ function applyRBAC() {
         
         document.getElementById("todoSection").classList.remove("hidden");
         document.getElementById("todoInputArea").classList.add("hidden");
-        document.getElementById("sec-manage-services").classList.remove("hidden"); // Visible but limited
+        document.getElementById("sec-manage-services").classList.remove("hidden");
         
         document.getElementById("btnUndo").classList.add("hidden");
         document.getElementById("btnClearHistory").classList.add("hidden");
         document.getElementById("btnHideExpired").classList.add("hidden");
-        
+        document.getElementById("btnStock").classList.add("hidden"); // Ensure stock hidden
+
         document.querySelector("#generalNotes textarea").style.display = "none";
         document.querySelector("#generalNotes button").style.display = "none";
 
@@ -1521,11 +1522,12 @@ function applyRBAC() {
             document.getElementById("btnLogs").classList.remove("hidden");
         }
         document.getElementById("btnPurchase").classList.add("hidden");
-        document.getElementById("sec-manage-services").classList.remove("hidden"); // Visible but limited
+        document.getElementById("sec-manage-services").classList.remove("hidden");
         
         document.getElementById("btnUndo").classList.add("hidden");
         document.getElementById("btnClearHistory").classList.add("hidden");
         document.getElementById("btnHideExpired").classList.add("hidden");
+        document.getElementById("btnStock").classList.add("hidden"); // Ensure stock hidden
         
         document.querySelector("#generalNotes textarea").style.display = "none";
         document.querySelector("#generalNotes button").style.display = "none";
@@ -1745,6 +1747,8 @@ function showPage(id, btn){
         
         // Strict Check for Investment Page
         if(id === 'investment' && currentUser.role !== 'admin') return notify("للأدمن فقط", "error");
+        // Strict Check for Stock Page
+        if(id === 'stock' && (currentUser.role === 'viewer' || currentUser.role === 'viewer_plus')) return notify("ليس لديك صلاحية", "error");
     }
     document.querySelectorAll(".card").forEach(x=>x.classList.add("hidden"));
     document.getElementById(id).classList.remove("hidden");
@@ -2435,7 +2439,7 @@ function refreshStock() {
     let thead = document.getElementById("stockHead");
     if(!tbody || !thead) return;
 
-    let canEdit = currentUser && currentUser.role === 'admin';
+    let isAdmin = currentUser && currentUser.role === 'admin';
     let canSell = currentUser && (currentUser.role === 'admin' || currentUser.role === 'employee');
 
     let searchTerm = document.getElementById("stockSearch").value.toLowerCase();
@@ -2464,7 +2468,7 @@ function refreshStock() {
             <th>تاريخ البيع</th>
             <th>رقم العميل</th>
             <th>التفاصيل</th>
-            <th>حذف</th>
+            ${isAdmin ? '<th>حذف</th>' : ''}
         </tr>`;
     }
     thead.innerHTML = headerHTML;
@@ -2489,10 +2493,9 @@ function refreshStock() {
                 ${sellBtn}
             </tr>`;
         } else {
-            // Sold View: "Details" button opens View-Only modal
+            // Sold View
             let viewBtn = `<button class="btn btn-primary" style="padding:5px 10px" onclick="viewSoldDetails(${realIndex})"><i class="fas fa-eye"></i></button>`;
-            // Delete button for sold items
-            let delBtn = canEdit ? `<button class="btn btn-danger" style="padding:5px 10px" onclick="deleteSoldStock(${realIndex})"><i class="fas fa-trash-alt"></i></button>` : '<td>-</td>';
+            let delBtn = isAdmin ? `<td><button class="btn btn-danger" style="padding:5px 10px" onclick="deleteSoldStock(${realIndex})"><i class="fas fa-trash-alt"></i></button></td>` : '';
             
             rows += `<tr>
                 <td><span class="badge badge-info">${item.service}</span></td>
@@ -2500,7 +2503,7 @@ function refreshStock() {
                 <td class="eng-num">${item.soldDate || '-'}</td>
                 <td class="eng-num">${item.soldTo || '-'}</td>
                 <td>${viewBtn}</td>
-                <td>${delBtn}</td>
+                ${delBtn}
             </tr>`;
         }
     });
