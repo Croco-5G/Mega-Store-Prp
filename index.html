@@ -1816,10 +1816,10 @@ function addPurchase(){
             <div><i class="fas fa-user"></i> <b>العميل:</b> ${customer.value||'—'} ${phoneVal?'('+phoneVal+')':''}</div>
             <div><i class="fas fa-calendar"></i> <b>المدة:</b> ${duration} شهر</div>
             <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border-color)">
-                <span style="color:var(--success)">💰 مدفوع: ${paid}${paidCur}</span> &nbsp;|&nbsp;
-                <span style="color:var(--danger)">💸 تكلفة: ${cost}${costCur}</span>
+                <span style="color:var(--success)"> مدفوع: ${paid}${paidCur}</span> &nbsp;|&nbsp;
+                <span style="color:var(--danger)"> تكلفة: ${cost}${costCur}</span>
             </div>
-            <div>📊 <b>صافي الربح تقريباً:</b> <b style="color:var(--primary)">${profitStr}</b></div>
+            <div> <b>صافي الربح تقريباً:</b> <b style="color:var(--primary)">${profitStr}</b></div>
             <div style="font-size:12px; margin-top:6px; color:var(--text-muted)">⬅️ من: ${from} &nbsp;|&nbsp; ➡️ إلى: ${wallet.value}</div>
         </div>`;
     
@@ -1899,7 +1899,7 @@ function _executePurchase(paid, cost, paidCur, costCur, from, duration, rate, se
         toName: wallet.value, tBefore: tBefore, tAfter: wallets[wallet.value].bal
     });
     
-    refreshAll(); pushToGithub(); notify("✅ تمت العملية بنجاح");
+    refreshAll(); pushToGithub(); notify(" تمت العملية بنجاح");
     paidAmount.value=""; costAmount.value=""; customer.value=""; sub.value=""; customerPhone.value=""; subDuration.value="1";
 }
 function refreshAll(){
@@ -2477,3 +2477,4 @@ window.onload=init;
 </script>
 </body>
 </html>
+
