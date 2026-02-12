@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mega Store Pro | Closed System</title>
+    <title>Mega Store Pro | System</title>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 576 512'%3E%3Cpath fill='%236366f1' d='M0 24C0 10.7 10.7 0 24 0H69.5c22 0 41.5 12.8 50.6 32h411c26.3 0 45.5 25 38.6 50.4l-41 152.3c-8.5 31.4-37 53.3-69.5 53.3H170.7l5.4 28.5c2.2 11.3 12.1 19.5 23.6 19.5H488c13.3 0 24 10.7 24 24s-10.7 24-24 24H199.7c-34.6 0-64.3-24.6-70.7-58.5L77.4 54.5c-.7-3.8-4-6.5-7.9-6.5H24C10.7 48 0 37.3 0 24zM128 464a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zm336-48a48 48 0 1 1 0 96 48 48 0 1 1 0-96z'/%3E%3C/svg%3E">
 
@@ -318,6 +318,13 @@
         body.dark-mode .login-card { background: rgba(30, 41, 59, 0.9); border-color: rgba(255,255,255,0.1); }
         @keyframes slideUpFade { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
+        /* New Breathing Animation */
+        @keyframes breathe {
+            0% { transform: scale(1) rotate(-5deg); box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3); }
+            50% { transform: scale(1.1) rotate(0deg); box-shadow: 0 20px 40px rgba(99, 102, 241, 0.6); }
+            100% { transform: scale(1) rotate(-5deg); box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3); }
+        }
+
         .login-icon-wrap { 
             width: 80px; height: 80px; 
             background: linear-gradient(135deg, var(--primary), var(--primary-dark)); 
@@ -325,6 +332,8 @@
             margin: 0 auto 25px auto; color: white; font-size: 32px; 
             box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3); 
             transform: rotate(-5deg);
+            /* Applied Animation */
+            animation: breathe 3s ease-in-out infinite;
         }
         
         .custom-input { position: relative; margin-bottom: 20px; }
@@ -372,18 +381,10 @@
         
         /* Loading Spinner */
         .loading-spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; display: none; }
-        .btn-login.loading .loading-spinner { display: block; } .btn-login.loading span { display: none; }
+        /* When button has .loading class, show spinner and hide text */
+        .btn.loading .loading-spinner { display: block; } 
+        .btn.loading span { display: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        
-        /* Global Search */
-        #globalSearchWrap { position: fixed; top: 20px; left: 180px; z-index: 1002; transition: all 0.3s; }
-        #globalSearchWrap input { width: 220px; padding: 10px 40px 10px 16px; border-radius: 50px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-size: 13px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: width 0.3s; }
-        #globalSearchWrap input:focus { width: 300px; border-color: var(--primary); }
-        #globalSearchWrap .srch-icon { position:absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
-        #globalSearchResults { position: absolute; top: calc(100% + 8px); left: 0; width: 320px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); max-height: 380px; overflow-y: auto; display: none; }
-        #globalSearchResults .sr-item { padding: 12px 16px; cursor: pointer; border-bottom: 1px solid var(--border-color); font-size: 13px; text-align: right; display: flex; align-items: center; justify-content: space-between; }
-        #globalSearchResults .sr-item:hover { background: var(--bg-input); }
-        @media(max-width: 900px) { #globalSearchWrap { display: none; } }
         
         .todo-item { display: flex; align-items: center; justify-content: space-between; background: var(--yellow-item-bg); padding: 15px; border-radius: 12px; border-right: 4px solid var(--yellow-item-border); box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 10px; color: var(--yellow-item-text); }
         #generalNotesBox .todo-item { background: var(--bg-input); border-right: 4px solid var(--primary); color: var(--text-main); }
@@ -474,12 +475,6 @@
 <button class="mobile-menu-btn" id="menuBtn" onclick="toggleSidebar()">
     <i class="fas fa-bars"></i>
 </button>
-
-<div id="globalSearchWrap">
-    <input id="globalSearchInput" placeholder="بحث شامل (عملاء، خدمات، ملاحظات)..." oninput="runGlobalSearch()" onblur="setTimeout(()=>hideSearchResults(),200)">
-    <i class="fas fa-search srch-icon"></i>
-    <div id="globalSearchResults"></div>
-</div>
 
 <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
@@ -689,8 +684,6 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px; flex-wrap:wrap; gap:10px">
             <h3 style="margin:0"><i class="fas fa-list-ul" style="color:var(--primary)"></i> الأرشيف المالي</h3>
             <div style="display:flex; gap:8px; flex-wrap:wrap">
-                <button class="btn" style="background:#10b98120; color:#10b981;" onclick="exportHistoryCSV()"><i class="fas fa-file-csv"></i> Excel</button>
-                <button class="btn" style="background:#6366f120; color:#6366f1;" onclick="printHistory()"><i class="fas fa-print"></i> PDF</button>
                 <button id="btnUndo" class="btn btn-primary" onclick="undoLastPurchase()"><i class="fas fa-undo"></i> تراجع</button>
                 <button id="btnClearHistory" class="btn btn-danger" onclick="clearHistory()"><i class="fas fa-trash-alt"></i> مسح الكل</button>
             </div>
@@ -1366,7 +1359,6 @@ async function attemptLogin() {
         
         document.getElementById("loginLayer").style.display = "none";
         document.body.classList.remove("locked");
-        document.getElementById("globalSearchWrap").style.display = "block";
         loadWallets(); loadProfitSettings(); loadGithubInputs(); refreshAll(); applyRBAC();
         document.getElementById("currentUserDisplay").innerHTML = `مرحباً، ${currentUser.username} (${getRoleName(currentUser.role)})`;
         checkExpiringOnLogin();
@@ -1816,10 +1808,10 @@ function addPurchase(){
             <div><i class="fas fa-user"></i> <b>العميل:</b> ${customer.value||'—'} ${phoneVal?'('+phoneVal+')':''}</div>
             <div><i class="fas fa-calendar"></i> <b>المدة:</b> ${duration} شهر</div>
             <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border-color)">
-                <span style="color:var(--success)"> مدفوع: ${paid}${paidCur}</span> &nbsp;|&nbsp;
-                <span style="color:var(--danger)"> تكلفة: ${cost}${costCur}</span>
+                <span style="color:var(--success)">💰 مدفوع: ${paid}${paidCur}</span> &nbsp;|&nbsp;
+                <span style="color:var(--danger)">💸 تكلفة: ${cost}${costCur}</span>
             </div>
-            <div> <b>صافي الربح تقريباً:</b> <b style="color:var(--primary)">${profitStr}</b></div>
+            <div>📊 <b>صافي الربح تقريباً:</b> <b style="color:var(--primary)">${profitStr}</b></div>
             <div style="font-size:12px; margin-top:6px; color:var(--text-muted)">⬅️ من: ${from} &nbsp;|&nbsp; ➡️ إلى: ${wallet.value}</div>
         </div>`;
     
@@ -1899,7 +1891,7 @@ function _executePurchase(paid, cost, paidCur, costCur, from, duration, rate, se
         toName: wallet.value, tBefore: tBefore, tAfter: wallets[wallet.value].bal
     });
     
-    refreshAll(); pushToGithub(); notify(" تمت العملية بنجاح");
+    refreshAll(); pushToGithub(); notify("✅ تمت العملية بنجاح");
     paidAmount.value=""; costAmount.value=""; customer.value=""; sub.value=""; customerPhone.value=""; subDuration.value="1";
 }
 function refreshAll(){
@@ -2367,93 +2359,6 @@ async function sellStock(i) {
     refreshStock(); pushToGithub(); notify("تم بيع الاشتراك");
 }
 
-function exportHistoryCSV() {
-    if(currentUser.role === 'viewer' || currentUser.role === 'viewer_plus') return notify("ليس لديك صلاحية","error");
-    let purchases = safeJSON(localStorage.purchases, []);
-    if(purchases.length === 0) return notify("لا توجد عمليات للتصدير","error");
-    
-    let bom = "\uFEFF";
-    let header = ["التاريخ","العميل","الجوال","الخدمة","المدة","المدفوع","التكلفة","المحفظة"].join(",");
-    let rows = purchases.slice().reverse().map(p => [
-        `"${p.date}"`, `"${p.customer}"`, `"${p.phone||'-'}"`, `"${p.sub}"`, `"${p.duration||'-'} شهر"`, `"${p.paid}"`, `"${p.cost}"`, `"${p.wallet}"`
-    ].join(",")).join("\n");
-    
-    let blob = new Blob([bom + header + "\n" + rows], {type: "text/csv;charset=utf-8;"});
-    let a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `MegaStore_Archive_${new Date().toLocaleDateString('en')}.csv`;
-    a.click();
-    logAction("تصدير الأرشيف المالي إلى Excel (CSV)");
-    notify(" تم تصدير الملف");
-}
-
-function printHistory() {
-    if(currentUser.role === 'viewer') return notify("ليس لديك صلاحية","error");
-    let histCard = document.getElementById("history");
-    let wasHidden = histCard.classList.contains("hidden");
-    if(wasHidden) { document.querySelectorAll(".card").forEach(x=>x.classList.add("hidden")); histCard.classList.remove("hidden"); }
-    window.print();
-    if(wasHidden) { histCard.classList.add("hidden"); document.getElementById("purchase").classList.remove("hidden"); }
-    logAction("طباعة/تصدير PDF للأرشيف المالي");
-}
-
-function runGlobalSearch() {
-    let q = document.getElementById("globalSearchInput").value.trim().toLowerCase();
-    let resultsDiv = document.getElementById("globalSearchResults");
-    
-    if(q.length < 2) { resultsDiv.style.display = "none"; return; }
-    
-    let results = [];
-    let purchases = safeJSON(localStorage.purchases, []);
-    let notes = safeJSON(localStorage.generalNotes, []);
-    let stock = safeJSON(localStorage.stock, []);
-    
-    purchases.forEach((p, i) => {
-        if((p.customer||'').toLowerCase().includes(q) || (p.sub||'').toLowerCase().includes(q) || (p.phone||'').includes(q)) {
-            results.push({ tag: "عملية", text: `${p.customer} - ${p.sub} (${p.date})`, action: () => showPage('history', document.getElementById('btnHistory')) });
-        }
-    });
-    
-    notes.forEach((n, i) => {
-        if((n.text||'').toLowerCase().includes(q)) {
-            results.push({ tag: "ملاحظة", text: n.text.substring(0,60), action: () => showPage('generalNotes', document.getElementById('btnNotes')) });
-        }
-    });
-    
-    stock.forEach((s, i) => {
-        if((s.service||'').toLowerCase().includes(q) || (s.email||'').toLowerCase().includes(q)) {
-            results.push({ tag: "مخزون", text: `${s.service} - ${s.email||''}`, action: () => showPage('stock', document.getElementById('btnStock')) });
-        }
-    });
-    
-    if(results.length === 0) {
-        resultsDiv.innerHTML = `<div class="sr-item" style="justify-content:center; color:var(--text-muted)">لا توجد نتائج</div>`;
-    } else {
-        resultsDiv.innerHTML = results.slice(0, 10).map((r, i) => 
-            `<div class="sr-item" onclick="selectSearchResult(${i})" data-idx="${i}">
-                <span style="font-weight:bold; color:var(--primary); font-size:11px; background:var(--bg-input); padding:2px 6px; border-radius:4px">${r.tag}</span> 
-                <span>${r.text}</span>
-            </div>`
-        ).join('');
-        resultsDiv._results = results;
-    }
-    
-    resultsDiv.style.display = "block";
-}
-
-function selectSearchResult(i) {
-    let results = document.getElementById("globalSearchResults")._results;
-    if(results && results[i]) {
-        results[i].action();
-        hideSearchResults();
-        document.getElementById("globalSearchInput").value = "";
-    }
-}
-
-function hideSearchResults() {
-    document.getElementById("globalSearchResults").style.display = "none";
-}
-
 function checkExpiringOnLogin() {
     let p = safeJSON(localStorage.purchases, []);
     let now = new Date().getTime(), days3 = 3 * 86400000;
@@ -2464,8 +2369,8 @@ function checkExpiringOnLogin() {
         let soon = expiring.length - expired;
         
         setTimeout(() => {
-            if(expired > 0) notify(` ${expired} اشتراك منتهي الصلاحية`, "error");
-            if(soon > 0) setTimeout(() => notify(` ${soon} اشتراك ينتهي خلال 3 أيام`, "error"), 1000);
+            if(expired > 0) notify(`⚠️ ${expired} اشتراك منتهي الصلاحية`, "error");
+            if(soon > 0) setTimeout(() => notify(`🔔 ${soon} اشتراك ينتهي خلال 3 أيام`, "error"), 1000);
         }, 1500);
         
         let badge = document.getElementById("expiryBadge");
@@ -2477,4 +2382,3 @@ window.onload=init;
 </script>
 </body>
 </html>
-
