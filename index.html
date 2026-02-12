@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mega Store Pro | Closed System</title>
+    <title>Mega Store Pro | ASystem</title>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 576 512'%3E%3Cpath fill='%236366f1' d='M0 24C0 10.7 10.7 0 24 0H69.5c22 0 41.5 12.8 50.6 32h411c26.3 0 45.5 25 38.6 50.4l-41 152.3c-8.5 31.4-37 53.3-69.5 53.3H170.7l5.4 28.5c2.2 11.3 12.1 19.5 23.6 19.5H488c13.3 0 24 10.7 24 24s-10.7 24-24 24H199.7c-34.6 0-64.3-24.6-70.7-58.5L77.4 54.5c-.7-3.8-4-6.5-7.9-6.5H24C10.7 48 0 37.3 0 24zM128 464a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zm336-48a48 48 0 1 1 0 96 48 48 0 1 1 0-96z'/%3E%3C/svg%3E">
 
@@ -571,7 +571,9 @@
     <div id="purchase" class="card">
         <h3><i class="fas fa-cart-plus" style="color:var(--primary)"></i> تسجيل اشتراك جديد</h3>
         <div class="grid-2">
-            <div class="input-group"><label>نوع الاشتراك</label><input id="sub" placeholder="مثال: نيتفليكس، يوتيوب..."></div>
+            <div class="input-group"><label>نوع الاشتراك</label>
+                <select id="sub"><option value="">اختر الخدمة...</option></select>
+            </div>
             <div class="input-group"><label>اسم العميل</label><input id="customer" placeholder="اسم العميل"></div>
         </div>
         <div class="grid-2">
@@ -1488,6 +1490,7 @@ function applyRBAC() {
         
         document.getElementById("todoSection").classList.remove("hidden");
         document.getElementById("todoInputArea").classList.remove("hidden");
+        document.getElementById("sec-manage-services").classList.remove("hidden"); // Visible but limited inside function
         
         document.getElementById("btnStock").classList.remove("hidden");
         document.getElementById("btnUndo").classList.remove("hidden");
@@ -1502,6 +1505,7 @@ function applyRBAC() {
         
         document.getElementById("todoSection").classList.remove("hidden");
         document.getElementById("todoInputArea").classList.add("hidden");
+        document.getElementById("sec-manage-services").classList.remove("hidden"); // Visible but limited
         
         document.getElementById("btnUndo").classList.add("hidden");
         document.getElementById("btnClearHistory").classList.add("hidden");
@@ -1517,6 +1521,7 @@ function applyRBAC() {
             document.getElementById("btnLogs").classList.remove("hidden");
         }
         document.getElementById("btnPurchase").classList.add("hidden");
+        document.getElementById("sec-manage-services").classList.remove("hidden"); // Visible but limited
         
         document.getElementById("btnUndo").classList.add("hidden");
         document.getElementById("btnClearHistory").classList.add("hidden");
@@ -1747,6 +1752,7 @@ function showPage(id, btn){
     document.querySelectorAll(".sidebar button").forEach(b => b.classList.remove("active"));
     if(btn) btn.classList.add("active");
     
+    if(id === 'purchase') loadServices();
     if(id === 'generalNotes') refreshGeneralNotes();
     if(id === 'investment') refreshInvestment();
     if(id === 'history') refreshHistory();
@@ -1756,7 +1762,7 @@ function showPage(id, btn){
     if(id === 'security') renderUsersTable();
     if(id === 'logs') refreshLogs();
     if(id === 'stock') refreshStock();
-    if(id === 'modify') renderServicesSettings();
+    if(id === 'modify') { refreshTodoList(); renderServicesSettings(); }
 }
 
 function toggleSidebar() {
@@ -1807,15 +1813,14 @@ function loadWallets(){
 }
 function loadServices() {
     let services = safeJSON(localStorage.services, []);
-    let sel = document.getElementById("stService");
-    if(sel) {
-        sel.innerHTML = '<option value="">اختر الخدمة...</option>';
-        services.forEach(s => {
-            let o = document.createElement("option");
-            o.value = s; o.text = s;
-            sel.appendChild(o);
-        });
-    }
+    let selStock = document.getElementById("stService");
+    let selPurchase = document.getElementById("sub");
+    
+    let html = '<option value="">اختر الخدمة...</option>';
+    services.forEach(s => { html += `<option value="${s}">${s}</option>`; });
+    
+    if(selStock) selStock.innerHTML = html;
+    if(selPurchase) selPurchase.innerHTML = html;
 }
 function loadProfitSettings(){
     let s = safeJSON(localStorage.settings, {});
@@ -1853,7 +1858,7 @@ function validatePhoneInput(el) {
 function addPurchase(){
     if(currentUser.role === 'viewer' || currentUser.role === 'viewer_plus') return;
     if(paidAmount.value === "" || costAmount.value === "") { notify("املأ المبلغ المدفوع والتكلفة","error"); return; }
-    if(!sub.value.trim()) { notify("أدخل نوع الاشتراك","error"); return; }
+    if(!sub.value) { notify("يرجى اختيار الخدمة","error"); return; }
     
     let paid=+paidAmount.value, cost=+costAmount.value;
     let paidCur=paidCurrency.value, costCur=costCurrency.value;
@@ -2377,6 +2382,13 @@ function openAddStockModal() {
     document.getElementById("stVendor").value = "";
     ["stEmail","stPass","stNotes"].forEach(id => document.getElementById(id).value = "");
     document.getElementById("stDuration").value = "1";
+    
+    // Ensure inputs are enabled (fixing the conflict bug)
+    let btnSave = document.querySelector("#stockModal .btn-primary");
+    let inputs = document.querySelectorAll("#stockModal input, #stockModal select, #stockModal textarea");
+    btnSave.classList.remove("hidden");
+    inputs.forEach(inp => inp.disabled = false);
+
     document.getElementById("stockModal").classList.remove("hidden");
 }
 
@@ -2398,7 +2410,6 @@ function saveStock() {
     let stock = safeJSON(localStorage.stock, []);
     if(index === -1) { stock.push(s); logAction(`إضافة اشتراك للمخزون: ${s.service}`); }
     else { 
-        // Preserve some fields if editing active stock
         let old = stock[index];
         s.status = old.status;
         if(old.soldDate) s.soldDate = old.soldDate;
@@ -2427,7 +2438,6 @@ function refreshStock() {
     let canEdit = currentUser && currentUser.role === 'admin';
     let canSell = currentUser && (currentUser.role === 'admin' || currentUser.role === 'employee');
 
-    // Filter by tab and search
     let searchTerm = document.getElementById("stockSearch").value.toLowerCase();
     let filtered = stock.filter(item => {
         let matchesTab = (currentStockTab === 'active') ? (item.status !== 'sold') : (item.status === 'sold');
@@ -2437,7 +2447,6 @@ function refreshStock() {
         return matchesTab && matchesSearch;
     });
 
-    // Headers
     let headerHTML = "";
     if(currentStockTab === 'active') {
         headerHTML = `<tr>
@@ -2455,32 +2464,22 @@ function refreshStock() {
             <th>تاريخ البيع</th>
             <th>رقم العميل</th>
             <th>التفاصيل</th>
+            <th>حذف</th>
         </tr>`;
     }
     thead.innerHTML = headerHTML;
 
-    // Body
     let rows = "";
     filtered.forEach((item) => {
-        // Find original index in full array for editing/selling
         let realIndex = stock.findIndex(x => x.id === item.id);
-
         let purchaseDate = new Date(item.timestamp);
         let expiryDate = new Date(purchaseDate);
         expiryDate.setMonth(expiryDate.getMonth() + parseInt(item.duration));
         let daysLeft = Math.max(0, Math.ceil((expiryDate - new Date()) / (1000 * 60 * 60 * 24)));
         
-        let detailsBtn = `<button class="btn btn-primary" style="padding:5px 10px" onclick="editStock(${realIndex})"><i class="fas fa-eye"></i></button>`;
-        
         if(currentStockTab === 'active') {
+            let detailsBtn = `<button class="btn btn-primary" style="padding:5px 10px" onclick="editStock(${realIndex})"><i class="fas fa-eye"></i></button>`;
             let sellBtn = canSell ? `<td><button class="btn" style="padding:5px 10px; background:var(--success); color:#fff" onclick="sellStock(${realIndex})"><i class="fas fa-check"></i> تم البيع</button></td>` : '';
-            // Only admin can edit active stock logic handled in editStock, here just trigger modal
-            // but if simple employee clicks eye, they should see readonly.
-            // For now, let's reuse editStock but disable save if not admin inside modal?
-            // User requirement: Employee "Cannot Edit". So we hide SAVE button in modal if employee?
-            // Or make inputs readonly. 
-            // For simplicity, let's allow "View" (Eye) for all authorized, handling logic in modal open.
-
             rows += `<tr>
                 <td><span class="badge badge-info">${item.service}</span></td>
                 <td class="wide-col" title="${item.email}">${item.email}</td>
@@ -2490,44 +2489,44 @@ function refreshStock() {
                 ${sellBtn}
             </tr>`;
         } else {
-            // Sold View
+            // Sold View: "Details" button opens View-Only modal
+            let viewBtn = `<button class="btn btn-primary" style="padding:5px 10px" onclick="viewSoldDetails(${realIndex})"><i class="fas fa-eye"></i></button>`;
+            // Delete button for sold items
+            let delBtn = canEdit ? `<button class="btn btn-danger" style="padding:5px 10px" onclick="deleteSoldStock(${realIndex})"><i class="fas fa-trash-alt"></i></button>` : '<td>-</td>';
+            
             rows += `<tr>
                 <td><span class="badge badge-info">${item.service}</span></td>
                 <td class="wide-col" title="${item.email}">${item.email}</td>
                 <td class="eng-num">${item.soldDate || '-'}</td>
                 <td class="eng-num">${item.soldTo || '-'}</td>
-                <td>${detailsBtn}</td>
+                <td>${viewBtn}</td>
+                <td>${delBtn}</td>
             </tr>`;
         }
     });
-    tbody.innerHTML = rows || `<tr><td colspan='6' style='text-align:center; padding:20px; color:var(--text-muted)'>لا توجد بيانات</td></tr>`;
+    tbody.innerHTML = rows || `<tr><td colspan='7' style='text-align:center; padding:20px; color:var(--text-muted)'>لا توجد بيانات</td></tr>`;
 }
 
 function filterStock() {
     refreshStock();
 }
 
+// Edit Active Stock (Admin only can save)
 function editStock(i) {
     let stock = safeJSON(localStorage.stock, []), item = stock[i];
-    let isSold = item.status === 'sold';
     let isAdmin = currentUser.role === 'admin';
 
-    // Populate Modal
-    loadServices(); // reload select
-    document.getElementById("stockModalTitle").innerHTML = isSold ? '<i class="fas fa-eye"></i> تفاصيل المباع' : (isAdmin ? '<i class="fas fa-edit"></i> تعديل المخزون' : '<i class="fas fa-eye"></i> تفاصيل المخزون');
+    loadServices();
+    document.getElementById("stockModalTitle").innerHTML = isAdmin ? '<i class="fas fa-edit"></i> تعديل المخزون' : '<i class="fas fa-eye"></i> تفاصيل المخزون';
     document.getElementById("stockIndex").value = i;
     
-    // Set values
-    // For Select, if value exists in options select it, else add temp option or show text?
-    // User wants dropdown. If saved item is not in dropdown anymore? We should handle that.
-    // Ideally add it as an option if missing.
+    // Set Values
     let sel = document.getElementById("stService");
     sel.value = item.service;
-    if(sel.value !== item.service) { // item service not in list
+    if(sel.value !== item.service) { // Fallback if service was deleted
          let o = document.createElement("option"); o.value=item.service; o.text=item.service; sel.appendChild(o);
          sel.value = item.service;
     }
-    
     document.getElementById("stVendor").value = item.vendor || "";
     document.getElementById("stDuration").value = item.duration;
     document.getElementById("stEmail").value = item.email;
@@ -2538,12 +2537,10 @@ function editStock(i) {
     let btnSave = document.querySelector("#stockModal .btn-primary");
     let inputs = document.querySelectorAll("#stockModal input, #stockModal select, #stockModal textarea");
     
-    if (isSold || !isAdmin) {
-        // Readonly mode
+    if (!isAdmin) {
         btnSave.classList.add("hidden");
         inputs.forEach(inp => inp.disabled = true);
     } else {
-        // Edit mode (Admin only, Active Item)
         btnSave.classList.remove("hidden");
         inputs.forEach(inp => inp.disabled = false);
     }
@@ -2551,12 +2548,41 @@ function editStock(i) {
     document.getElementById("stockModal").classList.remove("hidden");
 }
 
+// View Sold Details (Read Only Modal)
+function viewSoldDetails(i) {
+    let stock = safeJSON(localStorage.stock, []), item = stock[i];
+    
+    let body = document.getElementById("modalBody");
+    body.innerHTML = "";
+    
+    body.innerHTML += row("الخدمة", item.service);
+    body.innerHTML += row("الإيميل", item.email);
+    body.innerHTML += row("كلمة المرور", item.pass);
+    body.innerHTML += row("البائع", item.vendor || "-");
+    body.innerHTML += `<hr style="margin:10px 0; border:0; border-top:1px dashed var(--border-color)">`;
+    body.innerHTML += row("تاريخ البيع", item.soldDate);
+    body.innerHTML += row("بيع لـ", item.soldTo || "-");
+    body.innerHTML += `<div style="margin-top:10px; background:var(--bg-input); padding:10px; border-radius:8px; font-size:13px;"><b>ملاحظات:</b><br>${item.notes||'لا يوجد'}</div>`;
+    
+    document.getElementById("detailsModal").classList.remove("hidden");
+}
+
+async function deleteSoldStock(i) {
+    let ok = await showConfirm("حذف نهائي", "هل أنت متأكد من حذف هذا السجل من الأرشيف؟ لا يمكن التراجع.", "حذف", "إلغاء", '<i class="fas fa-trash-alt"></i>');
+    if(!ok) return;
+    
+    let stock = safeJSON(localStorage.stock, []);
+    stock.splice(i, 1);
+    localStorage.stock = JSON.stringify(stock);
+    logAction("حذف سجل مباع من المخزون");
+    refreshStock(); pushToGithub(); notify("تم الحذف");
+}
+
 async function sellStock(i) {
     let stock = safeJSON(localStorage.stock, []);
     let item = stock[i];
     
     let customerNum = await showPrompt("إتمام البيع", `بيع اشتراك: ${item.service}`, "رقم العميل (اختياري)", '<i class="fas fa-shopping-cart"></i>');
-    // Prompt returns null on cancel. Empty string is valid (optional).
     if (customerNum === null) return; 
 
     item.status = 'sold';
@@ -2574,9 +2600,16 @@ async function sellStock(i) {
 function renderServicesSettings() {
     let list = safeJSON(localStorage.services, []);
     let div = document.getElementById("servicesList");
+    let isAdmin = currentUser.role === 'admin';
     div.innerHTML = "";
+    
+    // Toggle Add Input Visibility
+    let addArea = document.querySelector("#sec-manage-services .inner-box > div:first-child");
+    if(addArea) addArea.style.display = isAdmin ? "flex" : "none";
+
     list.forEach((s, idx) => {
-        div.innerHTML += `<span class="badge badge-info" style="padding:10px; font-size:14px;">${s} <i class="fas fa-times" style="margin-right:8px; cursor:pointer; color:red" onclick="deleteService(${idx})"></i></span>`;
+        let delIcon = isAdmin ? `<i class="fas fa-times" style="margin-right:8px; cursor:pointer; color:red" onclick="deleteService(${idx})"></i>` : '';
+        div.innerHTML += `<span class="badge badge-info" style="padding:10px; font-size:14px;">${s} ${delIcon}</span>`;
     });
 }
 function addService() {
