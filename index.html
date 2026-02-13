@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mega Store Pro | Firebase System</title>
+    <title>Mega Store Pro | System</title>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 576 512'%3E%3Cpath fill='%236366f1' d='M0 24C0 10.7 10.7 0 24 0H69.5c22 0 41.5 12.8 50.6 32h411c26.3 0 45.5 25 38.6 50.4l-41 152.3c-8.5 31.4-37 53.3-69.5 53.3H170.7l5.4 28.5c2.2 11.3 12.1 19.5 23.6 19.5H488c13.3 0 24 10.7 24 24s-10.7 24-24 24H199.7c-34.6 0-64.3-24.6-70.7-58.5L77.4 54.5c-.7-3.8-4-6.5-7.9-6.5H24C10.7 48 0 37.3 0 24zM128 464a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zm336-48a48 48 0 1 1 0 96 48 48 0 1 1 0-96z'/%3E%3C/svg%3E">
 
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <style>
         /* --- CORE VARIABLES --- */
@@ -120,7 +120,7 @@
             background: linear-gradient(135deg, var(--primary), #a855f7); 
             -webkit-background-clip: text; 
             -webkit-text-fill-color: transparent; 
-            letter-spacing: -0.5px; 
+            letter-spacing: -0.5px;
             border-bottom: 1px solid rgba(255,255,255,0.05);
             margin-bottom: 10px;
         }
@@ -429,7 +429,7 @@
 <div id="demoBanner" title="وضع تجريبي"></div>
 
 <div id="syncStatus">
-    <i class="fas fa-cloud"></i> <span>جاري التحميل...</span>
+    <i class="fas fa-circle-notch fa-spin"></i> <span>جاري الاتصال...</span>
 </div>
 
 <div id="loginLayer" class="login-overlay">
@@ -441,7 +441,12 @@
         </label>
     </div>
 
-    <div id="loginCard" class="login-card">
+    <div id="firebaseLoadingCard" class="login-card" style="display:flex; flex-direction:column; align-items:center;">
+        <div class="loading-spinner" style="width:40px; height:40px; border-color:var(--primary); border-top-color:transparent; display:block; margin-bottom:20px;"></div>
+        <p style="color:var(--text-muted); font-weight:700;">جاري تحميل النظام...</p>
+    </div>
+
+    <div id="loginCard" class="login-card hidden">
         <div class="login-icon-wrap"><i class="fas fa-shield-alt"></i></div>
         <h2>تسجيل الدخول</h2>
         <p style="color:var(--text-muted); font-size:14px; margin-bottom:30px">أهلاً بك مجدداً في نظام Mega Store</p>
@@ -1006,13 +1011,6 @@
 </div>
 
 <script>
-const fix=n=>Number(n).toFixed(2);
-function safeJSON(str, fallback) {
-    try { return str ? JSON.parse(str) : fallback; }
-    catch(e) { console.warn("JSON parse error:", e); return fallback; }
-}
-function esc(s) { if(typeof s !== 'string') return s; return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
-
 // --- FIREBASE SETUP ---
 const firebaseConfig = {
     apiKey: "AIzaSyBDCTQSHeRD7gG4XdyG1nQxAD1ECQHzxNE",
@@ -1025,12 +1023,17 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const docRef = db.collection('store').doc('main');
-let isSyncing = false;
+const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-// --- DIALOG SYSTEM ---
+const fix=n=>Number(n).toFixed(2);
+function safeJSON(str, fallback) {
+    try { return str ? JSON.parse(str) : fallback; }
+    catch(e) { console.warn("JSON parse error:", e); return fallback; }
+}
+function esc(s) { if(typeof s !== 'string') return s; return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
+
+// --- UPDATED DIALOG SYSTEM ---
 let _confirmResolve = null;
 let _promptResolve = null;
 
@@ -1213,12 +1216,24 @@ function updateSyncStatus(msg, type="loading") {
         el.innerHTML = `<i class="fas fa-circle-notch fa-spin" style="color:var(--primary)"></i> <span>${msg}</span>`;
     } else if (type==="success") {
         el.innerHTML = `<i class="fas fa-check" style="color:var(--success)"></i> <span>${msg}</span>`;
-        // Stay success
+        setTimeout(() => checkConnectionStatus(), 3000); // Revert to connection status
     } else if (type==="error") {
         el.innerHTML = `<i class="fas fa-times" style="color:var(--danger)"></i> <span>${msg}</span>`;
     } else {
         el.innerHTML = `<i class="fas fa-cloud"></i> <span>${msg}</span>`;
     }
+}
+
+function checkConnectionStatus() {
+    const connectedRef = firebase.database().ref(".info/connected");
+    connectedRef.on("value", (snap) => {
+        const el = document.getElementById("syncStatus");
+        if (snap.val() === true) {
+            el.innerHTML = `<i class="fas fa-cloud"></i> <span>متصل</span>`;
+        } else {
+            el.innerHTML = `<i class="fas fa-wifi" style="color:var(--text-muted)"></i> <span>غير متصل</span>`;
+        }
+    });
 }
 
 function logAction(actionDescription, details=null) {
@@ -1239,24 +1254,6 @@ function logAction(actionDescription, details=null) {
 }
 
 function init(){
-    if(!localStorage.users) localStorage.users = JSON.stringify([DEFAULT_USER]);
-    if(!localStorage.wallets){
-        localStorage.wallets=JSON.stringify({
-            "جوال باي — سعاد":{bal:0, cur:"₪", active:true},
-            "جوال باي — محمد":{bal:0, cur:"₪", active:true},
-            "بال باي — أحمد":{bal:0, cur:"₪", active:true},
-            "بايننس — احمد":{bal:0, cur:"$", active:true}
-        });
-    }
-    if(!localStorage.purchases) localStorage.purchases="[]";
-    if(!localStorage.invest) localStorage.invest=JSON.stringify({ahmad:{d:0,s:0},mohamed:{d:0,s:0},store:{d:0,s:0}});
-    if(!localStorage.generalNotes) localStorage.generalNotes="[]";
-    if(!localStorage.todoList) localStorage.todoList="[]";
-    if(!localStorage.settings) localStorage.settings = JSON.stringify({ahmad: 35, mohamed: 35, store: 30, deductCost: true, exchangeRate: 0, logsVis: 'all'});
-    if(!localStorage.activityLog) localStorage.activityLog = "[]";
-    if(!localStorage.stock) localStorage.stock = "[]";
-    if(!localStorage.services) localStorage.services = "[]";
-
     if(localStorage.getItem("darkMode") === "true") {
         document.body.classList.add("dark-mode");
         document.getElementById("darkModeToggle").checked = true;
@@ -1268,42 +1265,93 @@ function init(){
         document.body.classList.add("demo-mode");
         document.getElementById("demoModeToggle").checked = true;
         updateSyncStatus();
-    } else {
-        listenToCloud();
     }
     
+    // Initialize Firebase Listener
+    initFirebaseListener();
+    checkConnectionStatus();
     updateStorageUI();
 }
 
-function listenToCloud() {
-    updateSyncStatus("جاري الاتصال...", "loading");
-    docRef.onSnapshot((doc) => {
-        if(isSyncing) return; // Don't pull if we are pushing
-        if (doc.exists) {
-            const data = doc.data();
-            
-            // Overwrite local storage with cloud data
-            if(data.users) localStorage.users = JSON.stringify(data.users);
-            if(data.wallets) localStorage.wallets = JSON.stringify(data.wallets);
-            if(data.purchases) localStorage.purchases = JSON.stringify(data.purchases);
-            if(data.invest) localStorage.invest = JSON.stringify(data.invest);
-            if(data.settings) localStorage.settings = JSON.stringify(data.settings);
-            if(data.generalNotes) localStorage.generalNotes = JSON.stringify(data.generalNotes);
-            if(data.todoList) localStorage.todoList = JSON.stringify(data.todoList);
-            if(data.activityLog) localStorage.activityLog = JSON.stringify(data.activityLog);
-            if(data.stock) localStorage.stock = JSON.stringify(data.stock);
-            if(data.services) localStorage.services = JSON.stringify(data.services);
+function initFirebaseListener() {
+    if(isDemoMode) {
+        // If demo mode, skip listening to firebase, show login directly
+        document.getElementById("firebaseLoadingCard").classList.add("hidden");
+        document.getElementById("loginCard").classList.remove("hidden");
+        return;
+    }
 
+    const dataRef = firebase.database().ref('megaStoreData');
+    dataRef.on('value', (snapshot) => {
+        const db = snapshot.val();
+        
+        if (db) {
+            if(db.users) localStorage.users = JSON.stringify(db.users);
+            if(db.wallets) localStorage.wallets = JSON.stringify(db.wallets);
+            if(db.purchases) localStorage.purchases = JSON.stringify(db.purchases);
+            if(db.invest) localStorage.invest = JSON.stringify(db.invest);
+            if(db.settings) localStorage.settings = JSON.stringify(db.settings);
+            if(db.generalNotes) localStorage.generalNotes = JSON.stringify(db.generalNotes);
+            if(db.todoList) localStorage.todoList = JSON.stringify(db.todoList);
+            if(db.activityLog) localStorage.activityLog = JSON.stringify(db.activityLog);
+            if(db.stock) localStorage.stock = JSON.stringify(db.stock);
+            if(db.services) localStorage.services = JSON.stringify(db.services);
+            
             if(currentUser) refreshAll();
-            updateSyncStatus("متصل (محدث)", "success");
+            
+            // Hide loading, show login
+            document.getElementById("firebaseLoadingCard").classList.add("hidden");
+            document.getElementById("loginCard").classList.remove("hidden");
         } else {
-             // First time? Create doc
-             pushToGithub(); // Initial push
+            // First time run or empty DB, initialize defaults if local storage empty
+            if(!localStorage.users) localStorage.users = JSON.stringify([DEFAULT_USER]);
+            if(!localStorage.wallets) localStorage.wallets=JSON.stringify({"جوال باي":{bal:0, cur:"₪", active:true}});
+            // ... (other defaults handled in saveToFirebase if needed)
+            
+            document.getElementById("firebaseLoadingCard").classList.add("hidden");
+            document.getElementById("loginCard").classList.remove("hidden");
         }
     }, (error) => {
-        updateSyncStatus("فشل الاتصال", "error");
-        console.error(error);
+        console.error("Firebase read error: " + error.code);
+        // Fallback to local data
+        document.getElementById("firebaseLoadingCard").classList.add("hidden");
+        document.getElementById("loginCard").classList.remove("hidden");
     });
+}
+
+function saveToFirebase() {
+    if(isDemoMode) return;
+    
+    updateSyncStatus("جاري الحفظ...", "loading");
+
+    const dbData = {
+        users: safeJSON(localStorage.users, []),
+        wallets: safeJSON(localStorage.wallets, {}),
+        purchases: safeJSON(localStorage.purchases, []),
+        invest: safeJSON(localStorage.invest, {}),
+        settings: safeJSON(localStorage.settings, {}),
+        generalNotes: safeJSON(localStorage.generalNotes, []),
+        todoList: safeJSON(localStorage.todoList, []),
+        activityLog: safeJSON(localStorage.activityLog, []),
+        stock: safeJSON(localStorage.stock, []),
+        services: safeJSON(localStorage.services, []),
+        lastUpdate: new Date().toISOString()
+    };
+
+    firebase.database().ref('megaStoreData').set(dbData)
+        .then(() => {
+            updateSyncStatus("تم الحفظ", "success");
+            updateStorageUI();
+        })
+        .catch((error) => {
+            console.error("Firebase write error: ", error);
+            updateSyncStatus("فشل الحفظ", "error");
+        });
+}
+
+// Replace pushToGithub with saveToFirebase wrapper for compatibility
+function pushToGithub(force = false) {
+    saveToFirebase();
 }
 
 function updateStorageUI() {
@@ -1348,6 +1396,12 @@ async function attemptLogin() {
     const btn = document.getElementById("btnLogin");
     const u = document.getElementById("loginUser").value.trim();
     const p = document.getElementById("loginPass").value.trim();
+    
+    // Check if local storage has users, if not try to init with default
+    if(!localStorage.users || safeJSON(localStorage.users, []).length === 0) {
+        localStorage.users = JSON.stringify([DEFAULT_USER]);
+    }
+
     let users = safeJSON(localStorage.users, []);
     
     btn.classList.add('loading'); 
@@ -1375,7 +1429,7 @@ async function attemptLogin() {
         logAction("تسجيل دخول للنظام");
 
         if(!isDemoMode) {
-            await pushToGithub(); 
+            pushToGithub(); // Sync login info
         }
         
         document.getElementById("loginLayer").style.display = "none";
@@ -1607,15 +1661,10 @@ async function clearLogs() {
     let targetLogs = allLogs.filter(log => (currentLogsTab === 'financial' ? log.details != null : log.details == null));
     
     let logsToSave = [];
-    
     if(res === 'third') {
-        // Find which items to DELETE (the oldest matching the current tab)
-        let logsToDelete = targetLogs.slice(-ITEMS_PER_PAGE);
-        
-        // Keep everything NOT in logsToDelete
-        logsToSave = allLogs.filter(l => !logsToDelete.includes(l));
+        let itemsToRemove = targetLogs.slice(-ITEMS_PER_PAGE);
+        logsToSave = allLogs.filter(l => !itemsToRemove.includes(l));
     } else {
-        // Delete ALL from current tab
         logsToSave = allLogs.filter(log => (currentLogsTab === 'financial' ? log.details == null : log.details != null));
     }
     
@@ -1672,43 +1721,6 @@ function changeMyPassword() {
         document.getElementById("changePassInput").value = "";
         logAction("قام بتغيير كلمة المرور الخاصة به");
         pushToGithub(); notify("تم التغيير بنجاح");
-    }
-}
-
-async function pushToGithub(force = false) {
-    // This is the new SAVE TO FIREBASE function
-    if(isDemoMode) return;
-
-    if (isSyncing) {
-        return; // debounce
-    }
-
-    isSyncing = true;
-    updateSyncStatus("جاري الحفظ...", "loading");
-
-    const dbData = {
-        users: safeJSON(localStorage.users, []),
-        wallets: safeJSON(localStorage.wallets, {}),
-        purchases: safeJSON(localStorage.purchases, []),
-        invest: safeJSON(localStorage.invest, {}),
-        settings: safeJSON(localStorage.settings, {}),
-        generalNotes: safeJSON(localStorage.generalNotes, []),
-        todoList: safeJSON(localStorage.todoList, []),
-        activityLog: safeJSON(localStorage.activityLog, []),
-        stock: safeJSON(localStorage.stock, []),
-        services: safeJSON(localStorage.services, []),
-        lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    try {
-        await docRef.set(dbData);
-        isSyncing = false;
-        updateSyncStatus("تم الحفظ سحابياً", "success");
-        updateStorageUI();
-    } catch (error) {
-        console.error(error);
-        isSyncing = false;
-        updateSyncStatus("فشل الحفظ", "error");
     }
 }
 
@@ -1820,6 +1832,7 @@ function saveProfitSettings(){
     logAction("تعديل إعدادات توزيع الأرباح");
     pushToGithub(); notify("تم الحفظ");
 }
+
 function validatePhoneInput(el) {
     let v = el.value.trim();
     if(!v) { el.style.borderColor = ""; return; }
@@ -2342,23 +2355,427 @@ function importData(){
     if(f) r.readAsText(f); else notify("اختر ملف","error"); 
 }
 
-function checkExpiringOnLogin() {
-    let p = safeJSON(localStorage.purchases, []);
-    let now = new Date().getTime(), days3 = 3 * 86400000;
-    let expiring = p.filter(x => x.expiry && !x.expiryDismissed && (x.expiry - now < days3 && x.expiry - now > -2592000000));
+async function undoLastPurchase(){ 
+    if(currentUser.role === 'viewer' || currentUser.role === 'viewer_plus') return;
+    let purchases = safeJSON(localStorage.purchases, []);
+    if(purchases.length === 0) return notify("لا توجد عمليات للتراجع عنها", "error");
+    let ok = await showConfirm("تراجع عن آخر عملية", "سيتم استعادة جميع الأرصدة والحصص. هل تريد المتابعة؟", "نعم، تراجع", "لا، إلغاء", '<i class="fas fa-undo"></i>');
+    if(!ok) return;
+    let lastP = purchases.pop();
+    let wallets = safeJSON(localStorage.wallets, {});
+    if(lastP.fromWallet && wallets[lastP.fromWallet]) { wallets[lastP.fromWallet].bal += parseFloat(lastP.cost); }
+    if(lastP.wallet && wallets[lastP.wallet]) { wallets[lastP.wallet].bal -= parseFloat(lastP.paid); }
+    localStorage.wallets = JSON.stringify(wallets);
+    localStorage.purchases = JSON.stringify(purchases);
+    if(lastP.investSnapshot) { localStorage.invest = JSON.stringify(lastP.investSnapshot); }
     
-    if(expiring.length > 0) {
-        let expired = expiring.filter(x => x.expiry < now).length;
-        let soon = expiring.length - expired;
-        
-        setTimeout(() => {
-            if(expired > 0) notify(`⚠️ ${expired} اشتراك منتهي الصلاحية`, "error");
-            if(soon > 0) setTimeout(() => notify(`🔔 ${soon} اشتراك ينتهي خلال 3 أيام`, "error"), 1000);
-        }, 1500);
-        
-        let badge = document.getElementById("expiryBadge");
-        if(badge) { badge.textContent = expiring.length; badge.style.display = "inline-flex"; }
+    // Reverse Stock if attached
+    if(lastP.stockId) {
+        let stockList = safeJSON(localStorage.stock, []);
+        let sItem = stockList.find(x => x.id === lastP.stockId);
+        if(sItem) {
+            sItem.soldProfiles = Math.max(0, (sItem.soldProfiles || 0) - 1);
+            if(sItem.buyers && sItem.buyers.length > 0) sItem.buyers.pop(); 
+            if(sItem.status === 'sold') {
+                sItem.status = 'active';
+                delete sItem.soldDate;
+            }
+            localStorage.stock = JSON.stringify(stockList);
+        }
     }
+    
+    logAction("تراجع عن عملية شراء", { type: 'undo', data: lastP, refunded: lastP.cost, deducted: lastP.paid });
+    
+    currentPage.history = 1;
+    loadPurchaseStock();
+    refreshAll(); pushToGithub(); notify("تم التراجع"); 
+}
+
+async function clearHistory(){ 
+    if(currentUser.role !== 'admin') return notify("للأدمن فقط","error"); 
+    let res = await showConfirm("مسح سجل العمليات", "سيتم حذف العمليات المالية المسجلة نهائياً.", "مسح الكل", "إلغاء", '<i class="fas fa-trash-alt"></i>', "مسح أقدم صفحة");
+    if(!res) return;
+    
+    let purchases = safeJSON(localStorage.purchases, []);
+    if(res === 'third') {
+        if(purchases.length > ITEMS_PER_PAGE) purchases.splice(0, ITEMS_PER_PAGE); 
+        else purchases = [];
+        localStorage.purchases = JSON.stringify(purchases);
+        logAction("قام الأدمن بمسح أقدم 50 عملية مالية لتوفير المساحة");
+    } else {
+        localStorage.purchases="[]"; 
+        logAction("مسح سجل العمليات بالكامل"); 
+    }
+    
+    currentPage.history = 1;
+    refreshHistory(); 
+    pushToGithub(); 
+    notify("تم المسح بنجاح");
+}
+
+function closeEditUserModal(e) { if(e === 'force' || e.target.id === 'editUserModal') document.getElementById("editUserModal").classList.add("hidden"); }
+
+function openEditUserModal(index) {
+    let users = safeJSON(localStorage.users, []), u = users[index];
+    document.getElementById("editUserIndex").value = index;
+    document.getElementById("editUserName").value = u.username;
+    document.getElementById("editUserPassInput").value = "";
+    document.getElementById("editUserRoleSelect").value = u.role;
+    document.getElementById("editUserModal").classList.remove("hidden");
+}
+
+async function saveUserEdit() {
+    let index = +document.getElementById("editUserIndex").value;
+    let newPass = document.getElementById("editUserPassInput").value.trim();
+    let newRole = document.getElementById("editUserRoleSelect").value;
+    let users = safeJSON(localStorage.users, []);
+    if(newPass) users[index].password = newPass;
+    if(users[index].username === currentUser.username && newRole !== 'admin') {
+        let ok = await showConfirm("تغيير صلاحيتك", "ستقلل صلاحيتك من أدمن. هل أنت متأكد؟", "نعم", "إلغاء", '<i class="fas fa-exclamation-triangle"></i>');
+        if(!ok) return;
+    }
+    users[index].role = newRole;
+    localStorage.users = JSON.stringify(users);
+    logAction(`تعديل بيانات المستخدم: ${users[index].username}`);
+    document.getElementById("editUserModal").classList.add("hidden");
+    renderUsersTable(); pushToGithub(); notify("تم تحديث بيانات المستخدم");
+}
+
+function closeStockModal(e) { if(e === 'force' || e.target.id === 'stockModal') document.getElementById("stockModal").classList.add("hidden"); }
+
+function openAddStockModal() {
+    loadServices();
+    document.getElementById("stockModalTitle").innerHTML = '<i class="fas fa-plus-circle"></i> إضافة اشتراك للمخزون';
+    document.getElementById("stockIndex").value = "-1";
+    document.getElementById("stService").value = "";
+    document.getElementById("stProfiles").value = "1";
+    document.getElementById("stVendor").value = "";
+    ["stEmail","stPass","stNotes"].forEach(id => document.getElementById(id).value = "");
+    document.getElementById("stDuration").value = "1";
+    
+    let btnSave = document.querySelector("#stockModal .btn-primary");
+    let inputs = document.querySelectorAll("#stockModal input, #stockModal select, #stockModal textarea");
+    btnSave.classList.remove("hidden");
+    inputs.forEach(inp => inp.disabled = false);
+
+    document.getElementById("stockModal").classList.remove("hidden");
+}
+
+function saveStock() {
+    let index = +document.getElementById("stockIndex").value;
+    let stService = document.getElementById("stService").value;
+    let stProfiles = parseInt(document.getElementById("stProfiles").value) || 1;
+    if(stProfiles < 1) stProfiles = 1;
+    
+    if(!stService) return notify("يرجى اختيار الخدمة", "error");
+    
+    let baseName = stService + (stProfiles > 1 ? " Shared" : "");
+    let stock = safeJSON(localStorage.stock, []);
+    
+    let activeStock = stock.filter(x => x.status === 'active' && x.id !== (index === -1 ? null : stock[index].id));
+    let finalName = baseName;
+    let counter = 2;
+    while(activeStock.some(x => (x.displayName || x.service) === finalName)) {
+        finalName = baseName + counter;
+        counter++;
+    }
+
+    let s = {
+        id: index === -1 ? Date.now() + '_' + Math.random().toString(36).substr(2,5) : stock[index].id,
+        service: stService,
+        displayName: finalName,
+        totalProfiles: stProfiles,
+        soldProfiles: index === -1 ? 0 : (stock[index].soldProfiles || 0),
+        vendor: document.getElementById("stVendor").value,
+        duration: document.getElementById("stDuration").value,
+        email: document.getElementById("stEmail").value.trim(),
+        pass: document.getElementById("stPass").value,
+        notes: document.getElementById("stNotes").value,
+        buyers: index === -1 ? [] : (stock[index].buyers || []),
+        status: index === -1 ? 'active' : (stock[index].status || 'active'),
+        date: new Date().toLocaleDateString('ar-EG'),
+        timestamp: new Date().getTime()
+    };
+    
+    if(index !== -1) {
+        let old = stock[index];
+        if(old.soldDate) s.soldDate = old.soldDate;
+    }
+    
+    if(index === -1) { stock.unshift(s); logAction(`إضافة اشتراك للمخزون: ${s.displayName}`); }
+    else { stock[index] = s; logAction(`تعديل اشتراك في المخزون: ${s.displayName}`); }
+    
+    localStorage.stock = JSON.stringify(stock);
+    document.getElementById("stockModal").classList.add("hidden");
+    currentPage.stock = 1;
+    loadPurchaseStock();
+    refreshStock(); pushToGithub(); notify("تم الحفظ بنجاح");
+}
+
+function switchStockTab(tab, btn) {
+    currentStockTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    if(tab === 'sold' && currentUser.role === 'admin') {
+        document.getElementById('btnDeleteAllSold').classList.remove('hidden');
+    } else {
+        document.getElementById('btnDeleteAllSold').classList.add('hidden');
+    }
+    
+    currentPage.stock = 1;
+    refreshStock();
+}
+
+async function deleteAllSoldStock() {
+    let res = await showConfirm("حذف المباع", "سيتم حذف كافة الاشتراكات المباعة نهائياً من الأرشيف.", "حذف الكل", "إلغاء", '<i class="fas fa-trash-alt"></i>', "مسح أقدم صفحة مباعة");
+    if(!res) return;
+    
+    let stock = safeJSON(localStorage.stock, []);
+    if(res === 'third') {
+        let soldItems = stock.filter(s => s.status === 'sold');
+        soldItems.sort((a, b) => a.timestamp - b.timestamp); 
+        let toRemove = soldItems.slice(0, ITEMS_PER_PAGE).map(s => s.id);
+        stock = stock.filter(s => !toRemove.includes(s.id));
+        logAction("قام الأدمن بحذف أقدم 50 اشتراك مباع");
+    } else {
+        stock = stock.filter(s => s.status !== 'sold');
+        logAction("قام الأدمن بحذف كافة الاشتراكات المباعة");
+    }
+    
+    localStorage.stock = JSON.stringify(stock);
+    currentPage.stock = 1;
+    refreshStock(); pushToGithub(); notify("تم المسح بنجاح");
+}
+
+function refreshStock() {
+    let stock = safeJSON(localStorage.stock, []);
+    let tbody = document.getElementById("stockBody"); 
+    let thead = document.getElementById("stockHead");
+    if(!tbody || !thead) return;
+
+    let isAdmin = currentUser && currentUser.role === 'admin';
+    let canSell = currentUser && (currentUser.role === 'admin' || currentUser.role === 'employee');
+
+    let searchTerm = document.getElementById("stockSearch").value.toLowerCase();
+    
+    let filtered = stock.filter(item => {
+        let matchesTab = (currentStockTab === 'active') ? (item.status !== 'sold') : (item.status === 'sold');
+        let matchesSearch = (item.displayName||item.service||'').toLowerCase().includes(searchTerm) || 
+                            (item.email||'').toLowerCase().includes(searchTerm) ||
+                            (item.vendor||'').toLowerCase().includes(searchTerm) ||
+                            (item.buyers && item.buyers.some(b => b.toLowerCase().includes(searchTerm)));
+        return matchesTab && matchesSearch;
+    });
+
+    filtered.sort((a, b) => b.timestamp - a.timestamp);
+
+    renderPagination(filtered.length, 'stock', refreshStock, 'stockPagination');
+    let paginated = filtered.slice((currentPage.stock - 1) * ITEMS_PER_PAGE, currentPage.stock * ITEMS_PER_PAGE);
+
+    let headerHTML = "";
+    if(currentStockTab === 'active') {
+        headerHTML = `<tr>
+            <th>الخدمة</th>
+            <th>الإيميل</th>
+            <th>البائع</th>
+            <th>البروفايلات</th>
+            <th>المتبقي</th>
+            <th>التفاصيل</th>
+            ${canSell ? '<th>بيع</th>' : ''}
+        </tr>`;
+    } else {
+        let delTh = isAdmin ? '<th>حذف</th>' : '';
+        headerHTML = `<tr>
+            <th>الخدمة</th>
+            <th>الإيميل</th>
+            <th>البروفايلات</th>
+            <th>تاريخ البيع</th>
+            <th>التفاصيل</th>
+            ${delTh}
+        </tr>`;
+    }
+    thead.innerHTML = headerHTML;
+
+    let rows = "";
+    paginated.forEach((item) => {
+        let realIndex = stock.findIndex(x => x.id === item.id);
+        
+        let purchaseDate = new Date(item.timestamp);
+        let expiryDate = new Date(purchaseDate);
+        expiryDate.setMonth(expiryDate.getMonth() + parseInt(item.duration));
+        let daysLeft = Math.max(0, Math.ceil((expiryDate - new Date()) / (1000 * 60 * 60 * 24)));
+        
+        let profStr = `${item.soldProfiles || 0}/${item.totalProfiles || 1}`;
+
+        if(currentStockTab === 'active') {
+            let detailsBtn = `<button class="btn btn-primary" style="padding:5px 10px" onclick="editStock(${realIndex})"><i class="fas fa-eye"></i></button>`;
+            let sellBtn = canSell ? `<td><button class="btn" style="padding:5px 10px; background:var(--success); color:#fff" onclick="sellStock(${realIndex})"><i class="fas fa-check"></i> بيع</button></td>` : '';
+            rows += `<tr>
+                <td><span class="badge badge-info">${esc(item.displayName || item.service)}</span></td>
+                <td class="wide-col" title="${esc(item.email)}">${esc(item.email)}</td>
+                <td>${esc(item.vendor) || '-'}</td>
+                <td class="eng-num" style="font-weight:bold;">${profStr}</td>
+                <td class="eng-num"><span class="badge ${daysLeft===0?'badge-danger':'badge-warning'}">${daysLeft} يوم</span></td>
+                <td>${detailsBtn}</td>
+                ${sellBtn}
+            </tr>`;
+        } else {
+            let viewBtn = `<button class="btn btn-primary" style="padding:5px 10px" onclick="viewSoldDetails(${realIndex})"><i class="fas fa-eye"></i></button>`;
+            let delCell = isAdmin ? `<td><button class="btn btn-danger" style="padding:5px 10px" onclick="deleteSoldStock(${realIndex})"><i class="fas fa-trash-alt"></i></button></td>` : '';
+            
+            rows += `<tr>
+                <td><span class="badge badge-info">${esc(item.displayName || item.service)}</span></td>
+                <td class="wide-col" title="${esc(item.email)}">${esc(item.email)}</td>
+                <td class="eng-num" style="font-weight:bold;">${profStr}</td>
+                <td class="eng-num">${item.soldDate || '-'}</td>
+                <td>${viewBtn}</td>
+                ${delCell}
+            </tr>`;
+        }
+    });
+    let colSpan = currentStockTab === 'active' ? (canSell ? 7 : 6) : (isAdmin ? 6 : 5);
+    tbody.innerHTML = rows || `<tr><td colspan='${colSpan}' style='text-align:center; padding:20px; color:var(--text-muted)'>لا توجد بيانات</td></tr>`;
+}
+
+function filterStock() {
+    refreshStock();
+}
+
+function editStock(i) {
+    let stock = safeJSON(localStorage.stock, []), item = stock[i];
+    let isAdmin = currentUser.role === 'admin';
+
+    loadServices();
+    document.getElementById("stockModalTitle").innerHTML = isAdmin ? '<i class="fas fa-edit"></i> تعديل المخزون' : '<i class="fas fa-eye"></i> تفاصيل المخزون';
+    document.getElementById("stockIndex").value = i;
+    
+    let sel = document.getElementById("stService");
+    sel.value = item.service;
+    if(sel.value !== item.service) { 
+         let o = document.createElement("option"); o.value=item.service; o.text=item.service; sel.appendChild(o);
+         sel.value = item.service;
+    }
+    
+    document.getElementById("stProfiles").value = item.totalProfiles || 1;
+    document.getElementById("stVendor").value = item.vendor || "";
+    document.getElementById("stDuration").value = item.duration;
+    document.getElementById("stEmail").value = item.email;
+    document.getElementById("stPass").value = item.pass;
+    document.getElementById("stNotes").value = item.notes;
+
+    let btnSave = document.querySelector("#stockModal .btn-primary");
+    let inputs = document.querySelectorAll("#stockModal input, #stockModal select, #stockModal textarea");
+    
+    if (!isAdmin) {
+        btnSave.classList.add("hidden");
+        inputs.forEach(inp => inp.disabled = true);
+    } else {
+        btnSave.classList.remove("hidden");
+        inputs.forEach(inp => inp.disabled = false);
+    }
+
+    document.getElementById("stockModal").classList.remove("hidden");
+}
+
+function viewSoldDetails(i) {
+    let stock = safeJSON(localStorage.stock, []), item = stock[i];
+    
+    let body = document.getElementById("modalBody");
+    body.innerHTML = "";
+    
+    body.innerHTML += row("الخدمة", esc(item.displayName || item.service));
+    body.innerHTML += row("الإيميل", esc(item.email));
+    body.innerHTML += row("كلمة المرور", esc(item.pass));
+    body.innerHTML += row("البائع", esc(item.vendor) || "-");
+    body.innerHTML += row("البروفايلات", `${item.soldProfiles || 0} / ${item.totalProfiles || 1}`);
+    body.innerHTML += `<hr style="margin:10px 0; border:0; border-top:1px dashed var(--border-color)">`;
+    body.innerHTML += row("تاريخ البيع", item.soldDate);
+    
+    let buyersHtml = "";
+    if(item.buyers && item.buyers.length > 0) {
+        buyersHtml = item.buyers.map((b, idx) => `<div style="padding:8px 0; border-bottom:1px solid var(--border-color);">${idx+1}. ${esc(b)}</div>`).join('');
+    } else {
+        buyersHtml = "مباشر (يدوي)";
+    }
+    
+    body.innerHTML += `<div class="detail-row" style="flex-direction:column; align-items:flex-start;">
+        <span class="detail-label" style="margin-bottom:8px;">قائمة العملاء (المشترين):</span>
+        <div style="background:var(--bg-input); width:100%; padding:10px; border-radius:8px; font-weight:bold; color:var(--primary);">${buyersHtml}</div>
+    </div>`;
+
+    body.innerHTML += `<div style="margin-top:10px; background:var(--bg-input); padding:10px; border-radius:8px; font-size:13px;"><b>ملاحظات:</b><br>${esc(item.notes)||'لا يوجد'}</div>`;
+    
+    document.getElementById("detailsModal").classList.remove("hidden");
+}
+
+async function deleteSoldStock(i) {
+    let ok = await showConfirm("حذف نهائي", "هل أنت متأكد من حذف هذا السجل من الأرشيف؟ لا يمكن التراجع.", "حذف", "إلغاء", '<i class="fas fa-trash-alt"></i>');
+    if(!ok) return;
+    
+    let stock = safeJSON(localStorage.stock, []);
+    stock.splice(i, 1);
+    localStorage.stock = JSON.stringify(stock);
+    logAction("حذف سجل مباع من المخزون");
+    refreshStock(); pushToGithub(); notify("تم الحذف");
+}
+
+async function sellStock(i) {
+    let stock = safeJSON(localStorage.stock, []);
+    let item = stock[i];
+    
+    let customerNum = await showPrompt("إتمام البيع يدوياً", `تسجيل بيع لاشتراك: ${esc(item.displayName || item.service)}`, "أدخل اسم/رقم العميل (اختياري)", '<i class="fas fa-shopping-cart"></i>');
+    if (customerNum === null) return; 
+
+    let buyerInfo = customerNum ? `تسجيل يدوي: ${customerNum}` : "مباشر (يدوي)";
+    if(!item.buyers) item.buyers = [];
+    item.buyers.push(buyerInfo);
+
+    item.soldProfiles = item.totalProfiles || 1;
+    item.status = 'sold';
+    item.soldDate = new Date().toLocaleDateString('ar-EG');
+    
+    stock[i] = item;
+    localStorage.stock = JSON.stringify(stock);
+    
+    logAction(`تم بيع اشتراك من المخزون يدوياً: ${item.displayName || item.service}`);
+    refreshStock(); loadPurchaseStock(); pushToGithub(); notify("تم نقل الاشتراك إلى المباع");
+}
+
+function renderServicesSettings() {
+    let list = safeJSON(localStorage.services, []);
+    let div = document.getElementById("servicesList");
+    let isAdmin = currentUser.role === 'admin';
+    div.innerHTML = "";
+    
+    let addArea = document.querySelector("#sec-manage-services .inner-box > div:first-child");
+    if(addArea) addArea.style.display = isAdmin ? "flex" : "none";
+
+    list.forEach((s, idx) => {
+        let delIcon = isAdmin ? `<i class="fas fa-times" style="margin-right:8px; cursor:pointer; color:red" onclick="deleteService(${idx})"></i>` : '';
+        div.innerHTML += `<span class="badge badge-info" style="padding:10px; font-size:14px;">${esc(s)} ${delIcon}</span>`;
+    });
+}
+function addService() {
+    let inp = document.getElementById("newServiceName");
+    let val = inp.value.trim();
+    if(!val) return;
+    let list = safeJSON(localStorage.services, []);
+    if(!list.includes(val)) {
+        list.push(val);
+        localStorage.services = JSON.stringify(list);
+        logAction(`إضافة خدمة جديدة: ${val}`);
+        renderServicesSettings();
+        pushToGithub();
+    }
+    inp.value = "";
+}
+function deleteService(idx) {
+    let list = safeJSON(localStorage.services, []);
+    list.splice(idx, 1);
+    localStorage.services = JSON.stringify(list);
+    renderServicesSettings();
+    pushToGithub();
 }
 
 window.onload=init;
