@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mega Store Pro | System</title>
+    <title>Mega Store Pro | Closed System</title>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 576 512'%3E%3Cpath fill='%236366f1' d='M0 24C0 10.7 10.7 0 24 0H69.5c22 0 41.5 12.8 50.6 32h411c26.3 0 45.5 25 38.6 50.4l-41 152.3c-8.5 31.4-37 53.3-69.5 53.3H170.7l5.4 28.5c2.2 11.3 12.1 19.5 23.6 19.5H488c13.3 0 24 10.7 24 24s-10.7 24-24 24H199.7c-34.6 0-64.3-24.6-70.7-58.5L77.4 54.5c-.7-3.8-4-6.5-7.9-6.5H24C10.7 48 0 37.3 0 24zM128 464a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zm336-48a48 48 0 1 1 0 96 48 48 0 1 1 0-96z'/%3E%3C/svg%3E">
 
@@ -777,16 +777,25 @@
     <div id="modify" class="card hidden">
         
         <div id="sec-storage" style="background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 25px; margin-bottom: 20px;">
-            <h3 style="color: var(--text-main); margin-top:0"><i class="fas fa-cloud" style="color:var(--primary)"></i> حالة قاعدة البيانات</h3>
+            <h3 style="color: var(--text-main); margin-top:0"><i class="fas fa-cloud" style="color:var(--primary)"></i> حالة التخزين السحابي (1MB Limit)</h3>
             <div style="background: var(--bg-input); border-radius: 10px; padding: 15px;">
-                <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:14px; font-weight:700;">
-                    <span>السجلات: <span id="storageUsed">0</span></span>
-                    <span>الحالة: <span id="storageFree">غير متصل</span></span>
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:14px; font-weight:700;">
+                    <span><i class="fas fa-database"></i> السجلات: <span id="storageUsed" style="color:var(--primary)">0</span></span>
+                    <span id="storageFree">جاري الفحص..</span>
                 </div>
-                <div style="width:100%; background:var(--border-color); height:10px; border-radius:10px; overflow:hidden;">
-                    <div id="storageBar" style="width:0%; background:var(--success); height:100%; transition:0.3s;"></div>
+                
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:12px; color:var(--text-muted);">
+                    <span id="storageSizeText">0 KB / 1024 KB</span>
+                    <span id="storagePercentText">0%</span>
                 </div>
-                <p style="font-size:12px; color:var(--text-muted); margin-top:10px; margin-bottom:0;">البيانات محفوظة على Firebase Firestore - تزامن تلقائي ولحظي.</p>
+
+                <div style="width:100%; background:var(--border-color); height:12px; border-radius:10px; overflow:hidden; margin-bottom:8px;">
+                    <div id="storageBar" style="width:0%; background:var(--success); height:100%; transition: width 0.5s ease;"></div>
+                </div>
+                
+                <p style="font-size:11px; color:var(--text-muted); margin:0;">
+                    تنبيه: الحد الأقصى للمستند هو 1 ميجابايت. عند الوصول لـ 90% قم بمسح السجلات القديمة.
+                </p>
             </div>
         </div>
 
@@ -1119,14 +1128,12 @@ document.addEventListener("keydown", e => {
     }
 });
 
-// Save a single key to Firebase (partial update - only changed key)
-// دالة الحفظ المصححة
+// Save a single key to Firebase (Fixed: Using set with merge)
 function fbSave(key, val) {
     if (isDemoMode) return;
     if (!fbDocRef) return;
     updateSyncStatus("جاري الحفظ...", "loading");
     
-    // التغيير هنا: استخدام set مع merge بدلاً من update
     fbDocRef.set({ [key]: val }, { merge: true })
         .catch(err => {
             console.error("fbSave error:", err);
@@ -1383,19 +1390,66 @@ function init(){
     updateStorageUI();
 }
 
+// --- NEW STORAGE UI FUNCTION ---
 function updateStorageUI() {
+    // 1. حساب عدد السجلات (Records Count)
     let totalRecords = 0;
-    ["purchases","activityLog","stock","users"].forEach(k => {
+    ["purchases","activityLog","stock","users","todoList","generalNotes"].forEach(k => {
         let arr = safeJSON(store[k], []);
         if(Array.isArray(arr)) totalRecords += arr.length;
         else totalRecords += Object.keys(arr).length;
     });
+
+    // 2. تحديث نصوص الحالة (Connection Status)
     let statusEl = document.getElementById("storageFree");
-    if(statusEl) statusEl.innerText = fbConnected ? "متصل" : "غير متصل";
+    if(statusEl) {
+        statusEl.innerText = fbConnected ? "متصل (Online)" : "غير متصل (Offline)";
+        statusEl.style.color = fbConnected ? "var(--success)" : "var(--danger)";
+    }
+    
     let usedEl = document.getElementById("storageUsed");
     if(usedEl) usedEl.innerText = totalRecords;
+
+    // 3. حساب الحجم الفعلي بالبايت (Size Calculation)
+    let dataString = JSON.stringify({
+        users: store.users,
+        wallets: store.wallets,
+        purchases: store.purchases,
+        invest: store.invest,
+        settings: store.settings,
+        generalNotes: store.generalNotes,
+        todoList: store.todoList,
+        activityLog: store.activityLog,
+        stock: store.stock,
+        services: store.services
+    });
+
+    let sizeInBytes = new Blob([dataString]).size; 
+    let limitInBytes = 1048576; // 1 MB = 1024 * 1024 bytes
+    
+    let sizeInKB = (sizeInBytes / 1024).toFixed(2);
+    let percentage = ((sizeInBytes / limitInBytes) * 100).toFixed(1);
+
+    // 4. تحديث الشريط والنصوص (UI Update)
+    let sizeText = document.getElementById("storageSizeText");
+    let percentText = document.getElementById("storagePercentText");
     let bar = document.getElementById("storageBar");
-    if(bar) { bar.style.width = fbConnected ? "100%" : "0%"; bar.style.background = fbConnected ? "var(--success)" : "var(--danger)"; }
+
+    if(sizeText) sizeText.innerText = `${sizeInKB} KB مستخدمة من 1024 KB`;
+    if(percentText) percentText.innerText = `${percentage}%`;
+    
+    if(bar) {
+        bar.style.width = `${Math.min(percentage, 100)}%`;
+        
+        // تغيير لون الشريط حسب الخطورة
+        if(percentage < 50) {
+            bar.style.background = "var(--success)"; // أخضر (آمن)
+        } else if (percentage < 85) {
+            bar.style.background = "var(--accent)"; // برتقالي (تنبيه)
+        } else {
+            bar.style.background = "var(--danger)"; // أحمر (خطر)
+        }
+    }
 }
 
 async function toggleDemoMode() {
@@ -2804,4 +2858,3 @@ window.onload = init;
 </script>
 </body>
 </html>
-
