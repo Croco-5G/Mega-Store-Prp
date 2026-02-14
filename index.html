@@ -3,37 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mega Store Pro | Cloud Native</title>
+    <title>Mega Store Pro | Closed System</title>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 576 512'%3E%3Cpath fill='%236366f1' d='M0 24C0 10.7 10.7 0 24 0H69.5c22 0 41.5 12.8 50.6 32h411c26.3 0 45.5 25 38.6 50.4l-41 152.3c-8.5 31.4-37 53.3-69.5 53.3H170.7l5.4 28.5c2.2 11.3 12.1 19.5 23.6 19.5H488c13.3 0 24 10.7 24 24s-10.7 24-24 24H199.7c-34.6 0-64.3-24.6-70.7-58.5L77.4 54.5c-.7-3.8-4-6.5-7.9-6.5H24C10.7 48 0 37.3 0 24zM128 464a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zm336-48a48 48 0 1 1 0 96 48 48 0 1 1 0-96z'/%3E%3C/svg%3E">
 
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
     <style>
         /* --- CORE VARIABLES --- */
         :root {
-            --primary: #6366f1; --primary-dark: #4f46e5; --primary-light: #e0e7ff;
-            --accent: #f59e0b; --success: #10b981; --danger: #ef4444; --info: #3b82f6;
-            --bg-body: #f1f5f9; --bg-card: #ffffff; --bg-input: #f8fafc; --bg-sidebar: #0f172a;
-            --text-main: #1e293b; --text-muted: #64748b; --border-color: #e2e8f0;
+            --primary: #6366f1; 
+            --primary-dark: #4f46e5; 
+            --primary-light: #e0e7ff;
+            --accent: #f59e0b;
+            --success: #10b981; 
+            --danger: #ef4444;
+            --info: #3b82f6;
+            
+            --bg-body: #f1f5f9; 
+            --bg-card: #ffffff; 
+            --bg-input: #f8fafc; 
+            --bg-sidebar: #0f172a;
+            
+            --text-main: #1e293b; 
+            --text-muted: #64748b; 
+            --border-color: #e2e8f0;
+            
             --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
             --card-hover-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
-            --radius-md: 12px; --radius-lg: 16px; --radius-xl: 24px;
+            
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+
             --yellow-bg: #fefce8; --yellow-border: #fde047; --yellow-text: #854d0e;
             --yellow-item-bg: #fffbeb; --yellow-item-border: #eab308; --yellow-item-text: #713f12;
             --yellow-btn-bg: #eab308; --yellow-btn-hover: #ca8a04;
         }
 
         body.dark-mode {
-            --bg-body: #0f172a; --bg-card: #1e293b; --bg-input: #334155; --bg-sidebar: #020617;
-            --text-main: #f1f5f9; --text-muted: #94a3b8; --border-color: #334155;
+            --bg-body: #0f172a; 
+            --bg-card: #1e293b; 
+            --bg-input: #334155; 
+            --bg-sidebar: #020617;
+            
+            --text-main: #f1f5f9; 
+            --text-muted: #94a3b8; 
+            --border-color: #334155;
+            
             --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
             --card-hover-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+
             --yellow-bg: rgba(234, 179, 8, 0.1); --yellow-border: rgba(234, 179, 8, 0.3);
             --yellow-text: #fde047; --yellow-item-bg: rgba(234, 179, 8, 0.15);
             --yellow-item-border: #eab308; --yellow-item-text: #fef08a;
@@ -44,8 +68,12 @@
         * { box-sizing: border-box; font-family: 'Tajawal', 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
         html, body { width: 100%; height: 100%; overflow-x: hidden; position: relative; }
         body { 
-            background: var(--bg-body); margin: 0; color: var(--text-main); 
-            display: flex; min-height: 100vh; transition: background 0.3s, color 0.3s;
+            background: var(--bg-body); 
+            margin: 0; 
+            color: var(--text-main); 
+            display: flex; 
+            min-height: 100vh; 
+            transition: background 0.3s, color 0.3s;
             -webkit-font-smoothing: antialiased;
         }
 
@@ -57,29 +85,125 @@
         ::-webkit-scrollbar-thumb:hover { background-color: var(--primary); }
 
         /* --- LAYOUT STRUCTURE --- */
-        .main-content { flex: 1; margin-right: 280px; padding: 30px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); width: 100%; max-width: 100%; }
-        .sidebar { width: 280px; background: var(--bg-sidebar); color: white; display: flex; flex-direction: column; position: fixed; height: 100dvh; right: 0; top: 0; z-index: 1000; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: -5px 0 25px rgba(0,0,0,0.2); border-left: 1px solid var(--border-color); padding-bottom: 20px; }
-        .brand { padding: 30px 20px 20px 20px; text-align: center; font-size: 20px; font-weight: 900; background: linear-gradient(135deg, var(--primary), #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 10px; }
+        .main-content { 
+            flex: 1; 
+            margin-right: 280px; 
+            padding: 30px; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            width: 100%; 
+            max-width: 100%; 
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar { 
+            width: 280px; 
+            background: var(--bg-sidebar); 
+            color: white; 
+            display: flex; 
+            flex-direction: column; 
+            position: fixed; 
+            height: 100dvh; 
+            right: 0; 
+            top: 0; 
+            z-index: 1000; 
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            box-shadow: -5px 0 25px rgba(0,0,0,0.2); 
+            border-left: 1px solid var(--border-color); 
+            padding-bottom: 20px;
+        }
+        .brand { 
+            padding: 30px 20px 20px 20px; 
+            text-align: center; 
+            font-size: 20px; 
+            font-weight: 900; 
+            background: linear-gradient(135deg, var(--primary), #a855f7); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+            letter-spacing: -0.5px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            margin-bottom: 10px;
+        }
         .menu-items { padding: 10px; flex-grow: 1; overflow-y: auto; }
-        .sidebar button { width: 100%; padding: 14px 18px; margin-bottom: 6px; border: none; border-radius: var(--radius-md); background: transparent; color: #94a3b8; font-size: 15px; font-weight: 600; cursor: pointer; text-align: right; display: flex; align-items: center; gap: 12px; transition: all 0.2s; }
+        .sidebar button { 
+            width: 100%; 
+            padding: 14px 18px; 
+            margin-bottom: 6px; 
+            border: none; 
+            border-radius: var(--radius-md); 
+            background: transparent; 
+            color: #94a3b8; 
+            font-size: 15px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            text-align: right; 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            transition: all 0.2s; 
+        }
         .sidebar button:hover { background: rgba(255,255,255,0.08); color: #fff; transform: translateX(-3px); }
-        .sidebar button.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
+        .sidebar button.active { 
+            background: var(--primary); 
+            color: white; 
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); 
+        }
         .sidebar button i { width: 20px; text-align: center; }
 
         /* --- CARDS & CONTAINERS --- */
-        .card { background: var(--bg-card); border-radius: var(--radius-xl); padding: 30px; box-shadow: var(--card-shadow); border: 1px solid var(--border-color); margin-bottom: 30px; animation: fadeIn 0.4s ease-out; position: relative; }
+        .card { 
+            background: var(--bg-card); 
+            border-radius: var(--radius-xl); 
+            padding: 30px; 
+            box-shadow: var(--card-shadow); 
+            border: 1px solid var(--border-color); 
+            margin-bottom: 30px; 
+            animation: fadeIn 0.4s ease-out; 
+            position: relative; 
+        }
         .card:hover { box-shadow: var(--card-hover-shadow); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .inner-box { background: var(--bg-input) !important; border: 1px solid var(--border-color) !important; border-radius: var(--radius-lg); padding: 20px; }
+
+        .inner-box { 
+            background: var(--bg-input) !important; 
+            border: 1px solid var(--border-color) !important; 
+            border-radius: var(--radius-lg);
+            padding: 20px;
+        }
 
         /* --- STATS GRID --- */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: var(--bg-card); padding: 24px; border-radius: var(--radius-lg); display: flex; align-items: center; gap: 18px; box-shadow: var(--card-shadow); border: 1px solid var(--border-color); transition: transform 0.2s; }
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
+            gap: 20px; 
+            margin-bottom: 30px; 
+        }
+        .stat-card { 
+            background: var(--bg-card); 
+            padding: 24px; 
+            border-radius: var(--radius-lg); 
+            display: flex; 
+            align-items: center; 
+            gap: 18px; 
+            box-shadow: var(--card-shadow); 
+            border: 1px solid var(--border-color); 
+            transition: transform 0.2s;
+        }
         .stat-card:hover { transform: translateY(-3px); }
-        .stat-icon { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .stat-icon { 
+            width: 56px; 
+            height: 56px; 
+            border-radius: 16px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 24px; 
+        }
+
+        /* ICON COLORS & DARK MODE FIX */
         .icon-bg-primary { background: #e0e7ff; color: var(--primary); }
         .icon-bg-success { background: #dcfce7; color: var(--success); }
         .icon-bg-warning { background: #fef3c7; color: var(--accent); }
+        
         body.dark-mode .icon-bg-primary { background: rgba(99, 102, 241, 0.15); color: #a5b4fc; }
         body.dark-mode .icon-bg-success { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
         body.dark-mode .icon-bg-warning { background: rgba(245, 158, 11, 0.15); color: #fcd34d; }
@@ -87,29 +211,80 @@
         /* --- FORMS & INPUTS --- */
         .input-group { margin-bottom: 18px; }
         label { display: block; margin-bottom: 8px; font-weight: 700; color: var(--text-muted); font-size: 13px; }
-        input, select, textarea { width: 100%; padding: 12px 16px; border-radius: var(--radius-md); border: 2px solid var(--border-color); background: var(--bg-input); color: var(--text-main); font-size: 15px; transition: all 0.3s; }
-        input:focus, select:focus, textarea:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); background: var(--bg-card); }
+        input, select, textarea { 
+            width: 100%; 
+            padding: 12px 16px; 
+            border-radius: var(--radius-md); 
+            border: 2px solid var(--border-color); 
+            background: var(--bg-input); 
+            color: var(--text-main); 
+            font-size: 15px; 
+            transition: all 0.3s; 
+        }
+        input:focus, select:focus, textarea:focus { 
+            border-color: var(--primary); 
+            outline: none; 
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); 
+            background: var(--bg-card);
+        }
         
         /* --- BUTTONS --- */
-        .btn { padding: 12px 24px; border-radius: var(--radius-md); font-weight: 700; cursor: pointer; transition: all 0.2s; border: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; }
+        .btn { 
+            padding: 12px 24px; 
+            border-radius: var(--radius-md); 
+            font-weight: 700; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            border: none; 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 8px; 
+            font-size: 14px;
+        }
         .btn-primary { background: var(--primary); color: white; }
         .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
         .btn-primary:active { transform: translateY(0); }
+        
         .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
         .btn-danger:hover { background: var(--danger); color: white; }
+        
         .btn-warning { background: rgba(245, 158, 11, 0.1); color: #d97706; }
         .btn-warning:hover { background: #f59e0b; color: white; }
+        
         .btn-whatsapp { background: #25D366; color: white; font-size: 13px; padding: 8px 16px; }
         .btn-whatsapp:hover { background: #128C7E; transform: scale(1.05); }
 
         /* --- TABLES --- */
-        .table-container { overflow-x: auto; border-radius: var(--radius-lg); border: 1px solid var(--border-color); width: 100%; background: var(--bg-card); }
+        .table-container { 
+            overflow-x: auto; 
+            border-radius: var(--radius-lg); 
+            border: 1px solid var(--border-color); 
+            width: 100%; 
+            background: var(--bg-card);
+        }
         table { width: 100%; border-collapse: collapse; min-width: 700px; }
-        th { background: var(--bg-input); padding: 18px; text-align: center; color: var(--text-muted); font-weight: 800; font-size: 13px; white-space: nowrap; }
-        td { padding: 16px; border-bottom: 1px solid var(--border-color); text-align: center; color: var(--text-main); font-size: 14px; vertical-align: middle; }
+        th { 
+            background: var(--bg-input); 
+            padding: 18px; 
+            text-align: center; 
+            color: var(--text-muted); 
+            font-weight: 800; 
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        td { 
+            padding: 16px; 
+            border-bottom: 1px solid var(--border-color); 
+            text-align: center; 
+            color: var(--text-main); 
+            font-size: 14px;
+            vertical-align: middle;
+        }
         tr:last-child td { border-bottom: none; }
         tr:hover td { background-color: rgba(99, 102, 241, 0.02); }
         tr.reminded td { background-color: rgba(16, 185, 129, 0.08); }
+
         .wide-col { min-width: 250px; max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: ltr; }
 
         /* --- BADGES --- */
@@ -119,26 +294,61 @@
         .badge-danger { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
         .badge-warning { background: rgba(245, 158, 11, 0.15); color: #d97706; }
 
-        /* --- MODAL --- */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); z-index: 2000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(6px); animation: fadeIn 0.2s; padding: 20px; }
-        .modal-content { background: var(--bg-card); width: 100%; max-width: 500px; padding: 30px; border-radius: var(--radius-xl); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid var(--border-color); color: var(--text-main); transform: translateY(20px); animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; max-height: 90vh; overflow-y: auto; }
+        /* --- MODAL STYLES --- */
+        .modal-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(15, 23, 42, 0.7); z-index: 2000; 
+            display: flex; justify-content: center; align-items: center; 
+            backdrop-filter: blur(6px); animation: fadeIn 0.2s; padding: 20px;
+        }
+        .modal-content { 
+            background: var(--bg-card); width: 100%; max-width: 500px; 
+            padding: 30px; border-radius: var(--radius-xl); 
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); 
+            border: 1px solid var(--border-color); color: var(--text-main); 
+            transform: translateY(20px); animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+            max-height: 90vh; overflow-y: auto; 
+        }
         @keyframes slideUp { to { transform: translateY(0); } }
         .detail-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed var(--border-color); }
         .detail-row:last-child { border-bottom: none; }
 
         /* --- LOGIN & CLOUD --- */
-        .login-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: radial-gradient(circle at top right, #4338ca, #1e1b4b); z-index: 3000; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
-        .login-card { background: rgba(255, 255, 255, 0.9); padding: 50px 40px; border-radius: 30px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); width: 100%; max-width: 420px; text-align: center; position: relative; backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.4); animation: slideUpFade 0.6s forwards; }
+        .login-overlay { 
+            position: fixed; top:0; left:0; width:100%; height:100%; 
+            background: radial-gradient(circle at top right, #4338ca, #1e1b4b); 
+            z-index: 3000; display: flex; flex-direction: column; 
+            justify-content: center; align-items: center; padding: 20px; 
+        }
+        .login-card { 
+            background: rgba(255, 255, 255, 0.9); padding: 50px 40px; 
+            border-radius: 30px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); 
+            width: 100%; max-width: 420px; text-align: center; 
+            position: relative; backdrop-filter: blur(12px); 
+            border: 1px solid rgba(255,255,255,0.4); 
+            animation: slideUpFade 0.6s forwards;
+        }
         body.dark-mode .login-card { background: rgba(30, 41, 59, 0.9); border-color: rgba(255,255,255,0.1); }
         @keyframes slideUpFade { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
+        /* New Breathing Animation */
         @keyframes breathe {
             0% { transform: scale(1) rotate(-5deg); box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3); }
             50% { transform: scale(1.1) rotate(0deg); box-shadow: 0 20px 40px rgba(99, 102, 241, 0.6); }
             100% { transform: scale(1) rotate(-5deg); box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3); }
         }
 
-        .login-icon-wrap { width: 80px; height: 80px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-radius: 24px; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px auto; color: white; font-size: 32px; box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3); transform: rotate(-5deg); animation: breathe 3s ease-in-out infinite; }
+        .login-icon-wrap { 
+            width: 80px; height: 80px; 
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark)); 
+            border-radius: 24px; display: flex; align-items: center; justify-content: center; 
+            margin: 0 auto 25px auto; color: white; font-size: 32px; 
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3); 
+            transform: rotate(-5deg);
+            /* Applied Animation */
+            animation: breathe 3s ease-in-out infinite;
+        }
+        
         .custom-input { position: relative; margin-bottom: 20px; }
         .custom-input i { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #94a3b8; transition: 0.3s; z-index: 10;}
         .custom-input input { padding-right: 45px; }
@@ -150,11 +360,14 @@
         .dialog-actions { display: flex; gap: 10px; margin-top: 25px; flex-wrap: wrap; }
         .dialog-actions .btn { flex: 1; min-width: 100px; padding: 12px; }
 
-        /* --- RESPONSIVE --- */
+        /* --- RESPONSIVE UTILS --- */
         .mobile-menu-btn { display: none; position: fixed; top: 20px; right: 20px; z-index: 1001; background: var(--bg-card); color: var(--primary); border: 1px solid var(--border-color); padding: 10px; border-radius: 12px; font-size: 20px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; backdrop-filter: blur(2px); }
         .hidden { display: none !important; }
+        
+        /* GRID HELPERS */
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        
         @media (max-width: 768px) {
             .sidebar { transform: translateX(100%); right: 0; }
             .sidebar.active { transform: translateX(0); }
@@ -168,7 +381,7 @@
             #syncStatus { top: 20px; left: 15px; }
         }
 
-        /* --- EXTRAS --- */
+        /* --- OTHER COMPONENTS --- */
         #notification { position: fixed; bottom: 30px; left: 30px; padding: 16px 25px; border-radius: 16px; color: white; font-weight: 700; z-index: 6000; display: none; animation: slideIn 0.3s ease-out; box-shadow: 0 10px 30px -5px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 10px; }
         #syncStatus { position: fixed; top: 25px; left: 30px; padding: 8px 16px; border-radius: 50px; font-size: 13px; font-weight: 700; z-index: 1001; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); box-shadow: 0 5px 15px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 8px; transition: all 0.3s; cursor: pointer; }
         .theme-switch-container { display: flex; justify-content: center; align-items: center; padding-bottom: 10px; gap: 10px; font-size: 14px; color: #94a3b8; }
@@ -179,23 +392,29 @@
         input:checked + .slider { background-color: var(--primary); }
         input:checked + .slider:before { transform: translateX(20px); }
         
+        /* Loading Spinner */
         .loading-spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; display: none; }
-        .btn.loading .loading-spinner { display: block; } .btn.loading span { display: none; }
+        .btn.loading .loading-spinner { display: block; } 
+        .btn.loading span { display: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
         
         .todo-item { display: flex; align-items: center; justify-content: space-between; background: var(--yellow-item-bg); padding: 15px; border-radius: 12px; border-right: 4px solid var(--yellow-item-border); box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 10px; color: var(--yellow-item-text); }
         #generalNotesBox .todo-item { background: var(--bg-input); border-right: 4px solid var(--primary); color: var(--text-main); }
         
+        /* Demo Mode Strip */
         #demoBanner { display:none; position:fixed; top:0; left:0; width:100%; height:4px; background:repeating-linear-gradient(45deg, #ef4444, #ef4444 10px, #b91c1c 10px, #b91c1c 20px); z-index:99999; }
         body.demo-mode #demoBanner { display:block; }
         body.demo-mode #syncStatus { background: rgba(239, 68, 68, 0.1); border-color: #ef4444; color: #ef4444; }
         
+        /* Blur Lock */
         body.locked .main-content, body.locked .sidebar, body.locked .mobile-menu-btn, body.locked #syncStatus { filter: blur(10px); pointer-events: none; user-select: none; }
         
+        /* Tabs */
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
         .tab-btn { padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-input); cursor: pointer; font-weight: 600; color: var(--text-muted); transition: 0.3s; }
         .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
+        /* Pagination */
         .pagination { display: flex; justify-content: center; gap: 8px; margin-top: 15px; align-items: center; flex-wrap: wrap; }
         .page-btn { padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); cursor: pointer; font-size: 13px; font-weight: 700; color: var(--text-muted); transition: 0.2s; outline:none; }
         .page-btn:hover:not(.disabled) { background: var(--bg-input); color: var(--primary); }
@@ -209,7 +428,7 @@
 <div id="demoBanner" title="وضع تجريبي"></div>
 
 <div id="syncStatus">
-    <i class="fas fa-circle-notch fa-spin"></i> <span>جاري الاتصال بالسحابة...</span>
+    <i class="fas fa-cloud"></i> <span>جاري التحميل...</span>
 </div>
 
 <div id="loginLayer" class="login-overlay">
@@ -221,15 +440,10 @@
         </label>
     </div>
 
-    <div id="firebaseLoadingCard" class="login-card" style="display:flex; flex-direction:column; align-items:center;">
-        <div class="loading-spinner" style="width:40px; height:40px; border-color:var(--primary); border-top-color:transparent; display:block; margin-bottom:20px;"></div>
-        <p style="color:var(--text-muted); font-weight:700;">جاري مزامنة البيانات...</p>
-    </div>
-
-    <div id="loginCard" class="login-card hidden">
+    <div id="loginCard" class="login-card">
         <div class="login-icon-wrap"><i class="fas fa-shield-alt"></i></div>
         <h2>تسجيل الدخول</h2>
-        <p style="color:var(--text-muted); font-size:14px; margin-bottom:30px">نظام Mega Store السحابي</p>
+        <p style="color:var(--text-muted); font-size:14px; margin-bottom:30px">أهلاً بك مجدداً في نظام Mega Store</p>
         
         <div class="custom-input">
             <input id="loginUser" placeholder="اسم المستخدم">
@@ -324,6 +538,7 @@
         <button onclick="showPage('generalNotes', this)" id="btnNotes"><i class="fas fa-sticky-note"></i> ملاحظات</button>
         <button onclick="showPage('security', this)" id="btnSecurity" class="hidden"><i class="fas fa-users-cog"></i> المستخدمين</button>
         <button onclick="showPage('logs', this)" id="btnLogs" class="hidden"><i class="fas fa-clipboard-list"></i> سجل النشاط</button>
+        <button onclick="showPage('backup', this)" id="btnBackup"><i class="fas fa-database"></i> نسخ احتياطي</button>
         <button onclick="showPage('modify', this)" id="btnSettings"><i class="fas fa-cog"></i> الإعدادات</button>
         <button onclick="logout()" style="color:var(--danger); margin-top:10px"><i class="fas fa-sign-out-alt"></i> تسجيل خروج</button>
     </div>
@@ -561,6 +776,20 @@
 
     <div id="modify" class="card hidden">
         
+        <div id="sec-storage" style="background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 25px; margin-bottom: 20px;">
+            <h3 style="color: var(--text-main); margin-top:0"><i class="fas fa-cloud" style="color:var(--primary)"></i> حالة قاعدة البيانات</h3>
+            <div style="background: var(--bg-input); border-radius: 10px; padding: 15px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:14px; font-weight:700;">
+                    <span>السجلات: <span id="storageUsed">0</span></span>
+                    <span>الحالة: <span id="storageFree">غير متصل</span></span>
+                </div>
+                <div style="width:100%; background:var(--border-color); height:10px; border-radius:10px; overflow:hidden;">
+                    <div id="storageBar" style="width:0%; background:var(--success); height:100%; transition:0.3s;"></div>
+                </div>
+                <p style="font-size:12px; color:var(--text-muted); margin-top:10px; margin-bottom:0;">البيانات محفوظة على Firebase Firestore - تزامن تلقائي ولحظي.</p>
+            </div>
+        </div>
+
         <div id="demo-mode-section" style="background: linear-gradient(135deg, #1e293b, #0f172a); color: white; padding: 25px; border-radius: var(--radius-lg); margin-bottom: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
@@ -697,6 +926,8 @@
             </div>
         </div>
 
+
+
         <div id="todoSection" style="background-color: var(--yellow-bg); border: 1px solid var(--yellow-border); border-radius: var(--radius-lg); padding: 25px; margin-bottom: 20px;">
             <h3 style="color: var(--yellow-text); margin-top:0"><i class="fas fa-tasks"></i> المهام (To-Do)</h3>
             <div id="todoInputArea" style="display:flex; gap:10px; margin-bottom:20px">
@@ -707,12 +938,37 @@
         </div>
     </div>
 
+    <div id="generalNotes" class="card hidden">
+        <h3><i class="fas fa-pen-fancy" style="color:var(--primary)"></i> المفكرة</h3>
+        <div style="display:flex; gap:15px; flex-direction: column;">
+            <textarea id="gnText" placeholder="اكتب ملاحظة..." style="height: 100px;"></textarea>
+            <button class="btn btn-primary" onclick="addGeneralNote()" style="align-self: flex-start;">حفظ الملاحظة</button>
+        </div>
+        <div id="generalNotesBox" style="margin-top:30px;"></div>
+    </div>
+
+    <div id="backup" class="card hidden">
+        <h3><i class="fas fa-shield-alt" style="color:var(--primary)"></i> حماية البيانات</h3>
+        <div style="text-align:center; padding:50px 20px; border:2px dashed var(--border-color); border-radius:30px; background:var(--bg-input);">
+            <i class="fas fa-cloud-download-alt" style="font-size:60px; color:var(--primary); margin-bottom:20px; opacity:0.8;"></i>
+            <p style="color:var(--text-main); font-weight:700; margin-bottom:25px;">احتفظ بنسخة احتياطية من بياناتك دائماً.</p>
+            <button class="btn btn-primary" onclick="exportData()"><i class="fas fa-download"></i> تحميل النسخة الاحتياطية</button>
+            
+            <div style="margin: 40px auto; width: 80%; border-top:1px solid var(--border-color)"></div>
+            
+            <div style="display:flex; gap:15px; align-items:center; justify-content:center; flex-wrap:wrap;">
+                <input type="file" id="importFile" style="width:auto; padding:10px;">
+                <button class="btn btn-danger" style="background:transparent; color:var(--text-muted); border:1px solid var(--border-color)" onclick="importData()">استعادة</button>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <div id="editUserModal" class="modal-overlay hidden" onclick="closeEditUserModal(event)">
     <div class="modal-content">
         <h3 style="margin-top:0; border-bottom:1px solid var(--border-color); padding-bottom:15px;"><i class="fas fa-user-edit"></i> تعديل بيانات المستخدم</h3>
-        <input type="hidden" id="editUserKey">
+        <input type="hidden" id="editUserIndex">
         <div class="input-group"><label>اسم المستخدم</label><input id="editUserName" readonly style="background:#f1f5f9; color:#94a3b8"></div>
         <div class="input-group"><label>كلمة المرور الجديدة</label><input id="editUserPassInput" type="password" placeholder="اتركه فارغاً لعدم التغيير"></div>
         <div class="input-group"><label>الصلاحية</label>
@@ -731,7 +987,7 @@
 <div id="stockModal" class="modal-overlay hidden" onclick="closeStockModal(event)">
     <div class="modal-content">
         <h3 id="stockModalTitle" style="margin-top:0; border-bottom:1px solid var(--border-color); padding-bottom:15px;">إضافة اشتراك للمخزون</h3>
-        <input type="hidden" id="stockKey">
+        <input type="hidden" id="stockIndex">
         <div class="input-group"><label>نوع الخدمة</label>
             <select id="stService"><option value="">اختر الخدمة...</option></select>
         </div>
@@ -750,12 +1006,11 @@
     </div>
 </div>
 
-<script>
-// --- FIREBASE SETUP ---
+
+// ─── Firebase Configuration ───────────────────────────────────────
 const firebaseConfig = {
     apiKey: "AIzaSyBDCTQSHeRD7gG4XdyG1nQxAD1ECQHzxNE",
     authDomain: "mega-store-58cc6.firebaseapp.com",
-    databaseURL: "https://mega-store-58cc6-default-rtdb.firebaseio.com",
     projectId: "mega-store-58cc6",
     storageBucket: "mega-store-58cc6.firebasestorage.app",
     messagingSenderId: "477692639493",
@@ -763,158 +1018,439 @@ const firebaseConfig = {
     measurementId: "G-PBR93L70M1"
 };
 
-const app = firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+// ─── In-Memory Store (replaces localStorage for app data) ────────
+let store = {};
+let fbDocRef = null;
+let fbConnected = false;
+let isFbSaving = false;
+let fbSavePending = {};
 
+const STORE_KEYS = ["users","wallets","purchases","invest","settings","generalNotes","todoList","activityLog","stock","services"];
+
+// Save a single key to Firebase (partial update - only changed key)
+function fbSave(key, val) {
+    if (isDemoMode) return;
+    if (!fbDocRef) return;
+    updateSyncStatus("جاري الحفظ...", "loading");
+    fbDocRef.update({ [key]: val })
+        .catch(err => {
+            console.error("fbSave error:", err);
+            updateSyncStatus("غير متصل", "error");
+        });
+}
+
+function initFirebase() {
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore(app);
+    fbDocRef = db.collection("megastore").doc("data");
+
+    updateSyncStatus("جاري الاتصال...", "loading");
+
+    // Real-time listener
+    fbDocRef.onSnapshot(
+        { includeMetadataChanges: true },
+        (doc) => {
+            const fromCache = doc.metadata.fromCache;
+            const hasPendingWrites = doc.metadata.hasPendingWrites;
+            
+            if (fromCache || !doc.exists) {
+                fbConnected = false;
+                updateSyncStatus("غير متصل", "error");
+                updateStorageUI();
+                return;
+            }
+            
+            fbConnected = true;
+            
+            if (doc.exists) {
+                const data = doc.data();
+                STORE_KEYS.forEach(k => {
+                    if (data[k] !== undefined) {
+                        store[k] = JSON.stringify(data[k]);
+                    }
+                });
+                if (currentUser) refreshAll();
+            } else {
+                // First time - create document with defaults
+                fbDocRef.set(getDefaultData()).catch(e => console.error(e));
+            }
+            
+            if (!hasPendingWrites) {
+                updateSyncStatus("متزامن", "success");
+            }
+            updateStorageUI();
+            
+            // Show login if not shown yet
+            if (document.getElementById("loginCard").style.display === "none" || 
+                document.getElementById("loginLayer").style.display !== "none") {
+                if (document.getElementById("loginLayer").style.display !== "none") {
+                    document.getElementById("loginCard").style.display = "";
+                }
+            }
+        },
+        (error) => {
+            fbConnected = false;
+            console.error("Firestore error:", error);
+            updateSyncStatus("غير متصل", "error");
+            updateStorageUI();
+        }
+    );
+
+    // Network status detection
+    window.addEventListener('online', () => {
+        if (fbConnected) updateSyncStatus("متزامن", "success");
+    });
+    window.addEventListener('offline', () => {
+        fbConnected = false;
+        updateSyncStatus("غير متصل", "error");
+        updateStorageUI();
+    });
+}
+
+function getDefaultData() {
+    return {
+        users: safeJSON(store.users, [DEFAULT_USER]),
+        wallets: safeJSON(store.wallets, {"جوال باي — سعاد":{bal:0,cur:"₪",active:true},"جوال باي — محمد":{bal:0,cur:"₪",active:true},"بال باي — أحمد":{bal:0,cur:"₪",active:true},"بايننس — احمد":{bal:0,cur:"$",active:true}}),
+        purchases: safeJSON(store.purchases, []),
+        invest: safeJSON(store.invest, {ahmad:{d:0,s:0},mohamed:{d:0,s:0},store:{d:0,s:0}}),
+        settings: safeJSON(store.settings, {ahmad:35,mohamed:35,store:30,deductCost:true,exchangeRate:0,logsVis:"all"}),
+        generalNotes: safeJSON(store.generalNotes, []),
+        todoList: safeJSON(store.todoList, []),
+        activityLog: safeJSON(store.activityLog, []),
+        stock: safeJSON(store.stock, []),
+        services: safeJSON(store.services, [])
+    };
+}
+// ──────────────────────────────────────────────────────────────────
+<script>
 const fix=n=>Number(n).toFixed(2);
-function safeJSON(str, fallback) { try { return str ? JSON.parse(str) : fallback; } catch(e) { return fallback; } }
+function safeJSON(str, fallback) {
+    try { return str ? JSON.parse(str) : fallback; }
+    catch(e) { console.warn("JSON parse error:", e); return fallback; }
+}
 function esc(s) { if(typeof s !== 'string') return s; return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
 
-// --- GLOBAL APP STATE (Replaces localStorage) ---
-let appData = {
-    users: [],
-    wallets: {},
-    purchases: [],
-    invest: {},
-    settings: {},
-    generalNotes: [],
-    todoList: [],
-    activityLog: [],
-    stock: [],
-    services: []
-};
+// --- UPDATED DIALOG SYSTEM ---
+let _confirmResolve = null;
+let _promptResolve = null;
 
+function showConfirm(title, msg, okText = "تأكيد", cancelText = "إلغاء", iconHtml = '<i class="fas fa-exclamation-triangle"></i>', thirdText = null) {
+    return new Promise(resolve => {
+        _confirmResolve = resolve;
+        document.getElementById("cdIcon").innerHTML = iconHtml; 
+        document.getElementById("cdTitle").textContent = title;
+        document.getElementById("cdMsg").textContent = msg;
+        document.getElementById("cdOkBtn").innerHTML = okText;
+        document.getElementById("cdCancelBtn").innerHTML = cancelText;
+        
+        let tBtn = document.getElementById("cdThirdBtn");
+        if(thirdText) {
+            tBtn.innerHTML = thirdText;
+            tBtn.style.display = "block";
+            tBtn.onclick = () => resolveConfirm('third');
+        } else {
+            tBtn.style.display = "none";
+        }
+        
+        document.getElementById("cdOkBtn").onclick = () => resolveConfirm(true);
+        document.getElementById("customConfirmDialog").style.display = "flex";
+    });
+}
+function resolveConfirm(val) {
+    document.getElementById("customConfirmDialog").style.display = "none";
+    if(_confirmResolve) { _confirmResolve(val); _confirmResolve = null; }
+}
+
+function showPrompt(title, msg = "", placeholder = "", iconHtml = '<i class="fas fa-pen"></i>') {
+    return new Promise(resolve => {
+        _promptResolve = resolve;
+        document.getElementById("pdIcon").innerHTML = iconHtml; 
+        document.getElementById("pdTitle").textContent = title;
+        document.getElementById("pdMsg").textContent = msg;
+        document.getElementById("pdInput").placeholder = placeholder;
+        document.getElementById("pdInput").value = "";
+        
+        let selectExists = document.getElementById("logsVisSelect");
+        if(!selectExists) document.getElementById("pdInputContainer").style.display = "block";
+        
+        document.getElementById("customPromptDialog").style.display = "flex";
+        setTimeout(() => document.getElementById("pdInput").focus(), 100);
+    });
+}
+function resolvePrompt(ok) {
+    document.getElementById("customPromptDialog").style.display = "none";
+    let val = ok ? document.getElementById("pdInput").value.trim() : null;
+    if(_promptResolve) { _promptResolve(val); _promptResolve = null; }
+}
+
+document.addEventListener("keydown", e => {
+    if(e.key === "Enter") {
+        if(document.getElementById("customPromptDialog").style.display === "flex") resolvePrompt(true);
+        if(document.getElementById("customConfirmDialog").style.display === "flex" && document.getElementById("cdThirdBtn").style.display === "none") resolveConfirm(true);
+    }
+    if(e.key === "Escape") {
+        if(document.getElementById("customPromptDialog").style.display === "flex") resolvePrompt(false);
+        if(document.getElementById("customConfirmDialog").style.display === "flex") resolveConfirm(false);
+        if(document.getElementById("purchaseConfirmModal").style.display === "flex") document.getElementById("purchaseConfirmModal").style.display = "none";
+    }
+});
+
+let myProfitChart = null;
+let mySalesChart = null;
 let currentUser = null; 
 let isDemoMode = false;
+
 let currentStockTab = 'active';
 let currentLogsTab = 'financial';
+
 let currentPage = { logs: 1, expiring: 1, stock: 1, history: 1 };
 const ITEMS_PER_PAGE = 50;
 
-const DEFAULT_USER = { username: "Mohamed Ahmed", password: "0000", role: "admin", status: "active", lastLogin: "-", deviceInfo: "-" };
 
-// --- FIREBASE LISTENERS (READ) ---
-function initFirebaseListeners() {
-    // Listen for changes and update local state (Queue happens on WRITE)
-    db.ref('megaStoreData').on('value', (snap) => {
-        const val = snap.val() || {};
-        
-        // Convert Firebase Objects to Arrays (preserving keys for updates)
-        appData.users = toArrayWithKeys(val.users);
-        appData.wallets = val.wallets || {};
-        appData.purchases = toArrayWithKeys(val.purchases);
-        appData.invest = val.invest || { ahmad: {d:0,s:0}, mohamed: {d:0,s:0}, store: {d:0,s:0} };
-        appData.settings = val.settings || {};
-        appData.generalNotes = toArrayWithKeys(val.generalNotes);
-        appData.todoList = toArrayWithKeys(val.todoList);
-        appData.activityLog = toArrayWithKeys(val.activityLog);
-        appData.stock = toArrayWithKeys(val.stock);
-        appData.services = toArrayWithKeys(val.services, true); // True for simple array
 
-        // If no users, init default
-        if(appData.users.length === 0) {
-            db.ref('megaStoreData/users').push(DEFAULT_USER);
-        }
-        // If no wallets, init default
-        if(Object.keys(appData.wallets).length === 0) {
-            db.ref('megaStoreData/wallets/جوال باي').set({bal:0, cur:"₪", active:true});
-        }
+const DEFAULT_USER = {
+    username: "Mohamed Ahmed",
+    password: "0000",
+    role: "admin", 
+    status: "active",
+    lastLogin: "-",
+    deviceInfo: "-"
+};
 
-        document.getElementById("firebaseLoadingCard").classList.add("hidden");
-        document.getElementById("loginCard").classList.remove("hidden");
-        
-        if(currentUser) {
-            // Update current user object reference
-            const updatedUser = appData.users.find(u => u.username === currentUser.username);
-            if(updatedUser) currentUser = updatedUser;
-            refreshAll();
-        }
-    });
-
-    db.ref('.info/connected').on('value', (snap) => {
-        const el = document.getElementById("syncStatus");
-        if (snap.val() === true) el.innerHTML = `<i class="fas fa-cloud"></i> <span>متصل بالسحابة</span>`;
-        else el.innerHTML = `<i class="fas fa-wifi" style="color:var(--text-muted)"></i> <span>جارٍ الاتصال...</span>`;
-    });
-}
-
-function toArrayWithKeys(obj, isSimple = false) {
-    if (!obj) return [];
-    if (isSimple) return Object.values(obj);
-    return Object.keys(obj).map(key => ({ ...obj[key], _fid: key }));
-}
-
-// --- WRITE FUNCTIONS (The Cloud Queue) ---
-function dbPush(path, data) {
-    if(isDemoMode) { console.log("Demo Push:", path, data); return; }
-    db.ref('megaStoreData/' + path).push(data);
-}
-function dbUpdate(path, data) {
-    if(isDemoMode) { console.log("Demo Update:", path, data); return; }
-    db.ref('megaStoreData/' + path).update(data);
-}
-function dbSet(path, data) {
-    if(isDemoMode) { console.log("Demo Set:", path, data); return; }
-    db.ref('megaStoreData/' + path).set(data);
-}
-function dbRemove(path) {
-    if(isDemoMode) { console.log("Demo Remove:", path); return; }
-    db.ref('megaStoreData/' + path).remove();
-}
-
-function init(){
-    if(localStorage.getItem("darkMode") === "true") {
-        document.body.classList.add("dark-mode");
-        document.getElementById("darkModeToggle").checked = true;
-        document.getElementById("loginThemeCheck").checked = true;
+function showModalDetails(details) {
+    if(!details) return;
+    const body = document.getElementById("modalBody");
+    body.innerHTML = "";
+    
+    if(details.type === 'manual') {
+        body.innerHTML += row("العملية", "تعديل رصيد محفظة");
+        body.innerHTML += row("السبب", esc(details.reason));
+        body.innerHTML += row("المحفظة", esc(details.wallet));
+        body.innerHTML += row("الرصيد السابق", fix(details.before), false);
+        body.innerHTML += row("التغيير", (details.diff >= 0 ? "+"+details.diff : details.diff), true, details.diff >= 0);
+        body.innerHTML += row("الرصيد الجديد", fix(details.after), false);
+    } 
+    else if(details.type === 'manual_invest') {
+        body.innerHTML += row("العملية", "تعديل حصة شريك");
+        body.innerHTML += row("الشريك", esc(details.person));
+        body.innerHTML += row("العملة", details.currency === 'd' ? 'دولار' : 'شيكل');
+        body.innerHTML += row("السبب", esc(details.reason));
+        body.innerHTML += `<hr style="margin:10px 0; border:0; border-top:1px dashed var(--border-color)">`;
+        body.innerHTML += row("قبل التعديل", fix(details.before));
+        body.innerHTML += row("بعد التعديل", fix(details.after));
     }
-    if(localStorage.getItem("isDemoMode") === "true") {
-        isDemoMode = true;
-        document.body.classList.add("demo-mode");
-        document.getElementById("demoModeToggle").checked = true;
-        // Mock data for demo
-        appData = { users:[DEFAULT_USER], wallets:{'Demo':{bal:1000,cur:'$',active:true}}, purchases:[], stock:[], invest:{ahmad:{d:0,s:0},mohamed:{d:0,s:0},store:{d:0,s:0}} };
-        document.getElementById("firebaseLoadingCard").classList.add("hidden");
-        document.getElementById("loginCard").classList.remove("hidden");
+    else if (details.type === 'transfer') {
+        body.innerHTML += row("العملية", "تحويل أرصدة");
+        body.innerHTML += row("من", esc(details.from));
+        body.innerHTML += row("إلى", esc(details.to));
+        body.innerHTML += `<hr style="margin:10px 0; border:0; border-top:1px dashed var(--border-color)">`;
+        body.innerHTML += row("المبلغ الكلي", details.amount + " (" + details.fromCur + ")");
+        body.innerHTML += row("العمولة", details.fee + " (" + details.fromCur + ")", true, false);
+        body.innerHTML += row("خصم العمولة من", "حصة المتجر (Capital)");
+        body.innerHTML += `<hr style="margin:10px 0; border:0; border-top:1px dashed var(--border-color)">`;
+        body.innerHTML += row("الصافي للتحويل", details.netAmount);
+        body.innerHTML += row("سعر الدولار", details.rate);
+        body.innerHTML += row("المودع (مستلم)", "+"+details.result + " (" + details.toCur + ")", true, true);
+    } else if (details.type === 'purchase') {
+        body.innerHTML += row("العملية", "تسجيل شراء");
+        body.innerHTML += row("العميل", esc(details.customer));
+        body.innerHTML += row("الخدمة", esc(details.sub));
+        body.innerHTML += `<hr style="margin:10px 0; border:0; border-top:1px dashed var(--border-color)">`;
+        body.innerHTML += `<h4>المحفظة المصدر: ${esc(details.wName)}</h4>`;
+        body.innerHTML += row("قبل الخصم", fix(details.wBefore));
+        body.innerHTML += row("المخصوم", "-"+details.cost, true, false);
+        body.innerHTML += row("بعد الخصم", fix(details.wAfter));
+        body.innerHTML += `<hr style="margin:10px 0; border:0; border-top:1px dashed var(--border-color)">`;
+        body.innerHTML += `<h4>المحفظة المستلمة: ${esc(details.toName)}</h4>`;
+        body.innerHTML += row("قبل الإيداع", fix(details.tBefore));
+        body.innerHTML += row("المقبوض", "+"+details.paid, true, true);
+        body.innerHTML += row("بعد الإيداع", fix(details.tAfter));
+    } else if (details.type === 'withdraw') {
+        body.innerHTML += row("العملية", "سحب أرباح");
+        body.innerHTML += row("الشريك/الجهة", esc(details.person));
+        body.innerHTML += row("السبب", esc(details.reason));
+        body.innerHTML += `<hr style="margin:10px 0; border:0; border-top:1px dashed var(--border-color)">`;
+        body.innerHTML += `<h4>محفظة السحب: ${esc(details.walletName)}</h4>`;
+        body.innerHTML += row("المبلغ المخصوم", "-"+fix(details.amount) + " " + (details.currency==='$'?'$':'₪'), true, false);
+        body.innerHTML += row("رصيد المحفظة بعد", fix(details.walletAfter));
+        body.innerHTML += `<hr style="margin:10px 0; border:0; border-top:1px dashed var(--border-color)">`;
+        body.innerHTML += `<h4>رصيد الحصة</h4>`;
+        body.innerHTML += row("قبل السحب", fix(details.shareBefore));
+        body.innerHTML += row("بعد السحب", fix(details.shareAfter));
+        
+    } else if (details.type === 'undo') {
+        body.innerHTML += `<div style="text-align:center; color:var(--accent); margin-bottom:10px"><i class="fas fa-undo"></i> تراجع عن عملية</div>`;
+        body.innerHTML += `<p style="text-align:center; font-size:13px">تم عكس العملية الأخيرة وإعادة الأرصدة لوضعها السابق:</p>`;
+        if(details.data) {
+             body.innerHTML += row("الخدمة الملغاة", esc(details.data.sub));
+             body.innerHTML += row("العميل", esc(details.data.customer));
+             body.innerHTML += `<hr style="margin:10px 0; border:0; border-top:1px dashed var(--border-color)">`;
+             body.innerHTML += row(`استرجاع تكلفة (${esc(details.data.fromWallet)})`, "+"+details.data.cost, true, true);
+             body.innerHTML += row(`خصم ربح (${esc(details.data.wallet)})`, "-"+details.data.paid, true, false);
+        }
     } else {
-        initFirebaseListeners();
+        body.innerHTML += `<p>${esc(JSON.stringify(details))}</p>`;
+    }
+    
+    document.getElementById("detailsModal").classList.remove("hidden");
+}
+
+function row(label, value, colored=false, positive=true) {
+    let colorStyle = colored ? (positive ? "color:var(--success)" : "color:var(--danger)") : "";
+    return `<div class="detail-row"><span class="detail-label">${label}</span><span class="detail-value" style="${colorStyle}">${value}</span></div>`;
+}
+
+function closeModal(e) {
+    if(e === 'force' || e.target.id === 'detailsModal') {
+        document.getElementById("detailsModal").classList.add("hidden");
     }
 }
 
-// --- LOGIC FUNCTIONS (Refactored for Cloud) ---
+function updateSyncStatus(msg, type="loading") {
+    const el = document.getElementById("syncStatus");
+    if(isDemoMode) {
+         el.innerHTML = `<i class="fas fa-flask"></i> <span>وضع تجريبي</span>`;
+         return;
+    }
+    if(type==="loading") {
+        el.innerHTML = `<i class="fas fa-circle-notch fa-spin" style="color:var(--primary)"></i> <span>${msg}</span>`;
+    } else if (type==="success") {
+        el.innerHTML = `<i class="fas fa-check" style="color:var(--success)"></i> <span>${msg}</span>`;
+        setTimeout(() => el.innerHTML = `<i class="fas fa-cloud"></i> <span>متزامن</span>`, 3000);
+    } else if (type==="error") {
+        el.innerHTML = `<i class="fas fa-exclamation-circle" style="color:var(--danger)"></i> <span>${msg}</span>`;
+    } else {
+        el.innerHTML = `<i class="fas fa-cloud"></i> <span>${msg}</span>`;
+    }
+}
 
 function logAction(actionDescription, details=null) {
     if(!currentUser) return;
-    dbPush('activityLog', {
+    let logs = safeJSON(store.activityLog, []);
+    logs.unshift({
         user: currentUser.username,
         action: actionDescription,
         time: new Date().toLocaleString("ar-EG"),
         details: details 
     });
+    if(logs.length > 500) logs = logs.slice(0, 500);
+    store.activityLog = JSON.stringify(logs); fbSave("activityLog", logs);
+    if(document.getElementById("logs").classList.contains("hidden") === false) {
+        currentPage.logs = 1;
+        refreshLogs();
+    }
 }
+
+function init(){
+    if(!store.users) store.users = JSON.stringify([DEFAULT_USER]); fbSave("users", [DEFAULT_USER]);
+    if(!store.wallets){
+        store.wallets = JSON.stringify({
+            "جوال باي — سعاد":{bal:0, cur:"₪", active:true},
+            "جوال باي — محمد":{bal:0, cur:"₪", active:true},
+            "بال باي — أحمد":{bal:0, cur:"₪", active:true},
+            "بايننس — احمد":{bal:0, cur:"$", active:true}
+        }); fbSave("wallets", {
+            "جوال باي — سعاد":{bal:0, cur:"₪", active:true},
+            "جوال باي — محمد":{bal:0, cur:"₪", active:true},
+            "بال باي — أحمد":{bal:0, cur:"₪", active:true},
+            "بايننس — احمد":{bal:0, cur:"$", active:true}
+        });
+    }
+    if(!store.purchases) store.purchases = "[]"; fbSave("purchases", []);
+    if(!store.invest) store.invest = JSON.stringify({ahmad:{d:0,s:0},mohamed:{d:0,s:0},store:{d:0,s:0}}); fbSave("invest", {ahmad:{d:0,s:0},mohamed:{d:0,s:0},store:{d:0,s:0}});
+    if(!store.generalNotes) store.generalNotes = "[]"; fbSave("generalNotes", []);
+    if(!store.todoList) store.todoList = "[]"; fbSave("todoList", []);
+    if(!store.settings) store.settings = JSON.stringify({ahmad: 35, mohamed: 35, store: 30, deductCost: true, exchangeRate: 0, logsVis: 'all'}); fbSave("settings", {ahmad: 35, mohamed: 35, store: 30, deductCost: true, exchangeRate: 0, logsVis: 'all'});
+    if(!store.activityLog) store.activityLog = "[]"; fbSave("activityLog", []);
+    if(!store.stock) store.stock = "[]"; fbSave("stock", []);
+    if(!store.services) store.services = "[]"; fbSave("services", []);
+
+    if(localStorage.getItem("darkMode") === "true") {
+        document.body.classList.add("dark-mode");
+        document.getElementById("darkModeToggle").checked = true;
+        if(document.getElementById("loginThemeCheck")) document.getElementById("loginThemeCheck").checked = true;
+    }
+
+    if(localStorage.getItem("isDemoMode") === "true") {
+        isDemoMode = true;
+        document.body.classList.add("demo-mode");
+        document.getElementById("demoModeToggle").checked = true;
+        updateSyncStatus();
+    }
+    
+    // Initialize Firebase & listen for realtime changes
+    initFirebase();
+    updateStorageUI();
+}
+
+function updateStorageUI() {
+    let totalRecords = 0;
+    ["purchases","activityLog","stock","users"].forEach(k => {
+        let arr = safeJSON(store[k], []);
+        if(Array.isArray(arr)) totalRecords += arr.length;
+        else totalRecords += Object.keys(arr).length;
+    });
+    let statusEl = document.getElementById("storageFree");
+    if(statusEl) statusEl.innerText = fbConnected ? "متصل" : "غير متصل";
+    let usedEl = document.getElementById("storageUsed");
+    if(usedEl) usedEl.innerText = totalRecords;
+    let bar = document.getElementById("storageBar");
+    if(bar) { bar.style.width = fbConnected ? "100%" : "0%"; bar.style.background = fbConnected ? "var(--success)" : "var(--danger)"; }
+}
+
+}
+
+async function toggleDemoMode() {
+    let current = localStorage.getItem("isDemoMode") === "true";
+    let newState = !current;
+    
+    if (newState) {
+        let ok = await showConfirm("تفعيل الوضع التجريبي", "سيتوقف الربط السحابي، ويمكنك التجربة بحرية. عند الإيقاف سيتم حذف جميع التغييرات التجريبية.", "تفعيل", "إلغاء", '<i class="fas fa-flask"></i>');
+        if(!ok) { document.getElementById("demoModeToggle").checked = false; return; }
+        localStorage.setItem("isDemoMode", "true");
+        location.reload();
+    } else {
+        let ok = await showConfirm("إيقاف الوضع التجريبي", "سيتم استعادة البيانات الأصلية من السحابة وحذف أي تعديلات قمت بها الآن.", "إيقاف", "إلغاء", '<i class="fas fa-cloud-download-alt"></i>');
+        if(!ok) { document.getElementById("demoModeToggle").checked = true; return; }
+        
+        localStorage.setItem("isDemoMode", "false");
+        location.reload();
+    }
+}
+
+
 
 async function attemptLogin() {
     const btn = document.getElementById("btnLogin");
     const u = document.getElementById("loginUser").value.trim();
     const p = document.getElementById("loginPass").value.trim();
+    let users = safeJSON(store.users, []);
     
     btn.classList.add('loading'); 
+
     await new Promise(r => setTimeout(r, 800));
 
-    let userObj = appData.users.find(x => x.username.toLowerCase() === u.toLowerCase() && x.password === p);
+    let userObj = users.find(x => x.username.toLowerCase() === u.toLowerCase() && x.password === p);
 
     if (userObj) {
+        if(userObj.username === "Mohamed Ahmed") {
+            userObj.role = "admin"; userObj.status = "active";
+            store.users = JSON.stringify(users); fbSave("users", users);
+        }
+
         if(userObj.status === "banned") { 
             notify("تم حظر هذا الحساب. راجع المسؤول.", "error"); 
             btn.classList.remove('loading');
             return; 
         }
         currentUser = userObj;
-        
-        // Update Last Login in Cloud
-        if(userObj._fid) dbUpdate(`users/${userObj._fid}`, { lastLogin: new Date().toLocaleString("ar-EG"), deviceInfo: getOS() });
+        userObj.lastLogin = new Date().toLocaleString("ar-EG");
+        userObj.deviceInfo = getOS();
+        store.users = JSON.stringify(users); fbSave("users", users);
         
         logAction("تسجيل دخول للنظام");
+
+        // Firebase handles sync automatically
         
         document.getElementById("loginLayer").style.display = "none";
         document.body.classList.remove("locked");
@@ -924,124 +1460,824 @@ async function attemptLogin() {
     } else { 
         notify("بيانات الدخول غير صحيحة", "error");
     }
+    
     btn.classList.remove('loading'); 
 }
 
-function checkExpiringOnLogin() {
-    // Optional: Alert on login if items expiring
+function getOS() {
+    let platform = window.navigator.platform, os = null;
+    if (['Macintosh', 'MacIntel'].indexOf(platform) !== -1) os = 'Mac OS';
+    else if (['iPhone', 'iPad'].indexOf(platform) !== -1) os = 'iOS';
+    else if (['Win32', 'Win64', 'Windows'].indexOf(platform) !== -1) os = 'Windows';
+    else if (/Android/.test(window.navigator.userAgent)) os = 'Android';
+    else if (/Linux/.test(platform)) os = 'Linux';
+    return os || "Unknown";
 }
 
-// --- USER MANAGEMENT (CLOUD) ---
+function logout() { location.reload(); }
+function getRoleName(role) { 
+    if(role==='admin') return 'أدمن';
+    if(role==='employee') return 'موظف';
+    if(role==='viewer_plus') return 'مشاهد متقدم';
+    return 'مشاهد عادي'; 
+}
+
+function applyRBAC() {
+    const role = currentUser.role;
+    
+    document.getElementById("btnSecurity").classList.add("hidden");
+    document.getElementById("btnBackup").classList.add("hidden");
+    document.getElementById("btnLogs").classList.add("hidden");
+    document.getElementById("demo-mode-section").classList.add("hidden");
+    document.getElementById("btnInvestment").classList.add("hidden"); 
+    
+    document.getElementById("sec-manual-wallet").classList.add("hidden");
+    document.getElementById("sec-set-wallet-balance").classList.add("hidden");
+    document.getElementById("sec-set-profit-share").classList.add("hidden");
+    document.getElementById("sec-manage-wallets").classList.add("hidden");
+    document.getElementById("sec-rename-wallet").classList.add("hidden");
+    document.getElementById("sec-profit-settings").classList.add("hidden");
+    document.getElementById("todoSection").classList.add("hidden");
+    document.getElementById("todoInputArea").classList.add("hidden");
+    document.getElementById("btnAddStock").classList.add("hidden");
+    document.getElementById("sec-manage-services").classList.add("hidden");
+
+    document.getElementById("btnSettings").classList.remove("hidden");
+    document.getElementById("btnClearLogs").classList.add("hidden");
+    document.getElementById("btnVisLogs").classList.add("hidden");
+
+    let settings = safeJSON(store.settings, {});
+    let logsVis = settings.logsVis || 'all';
+
+    if (role === 'admin') {
+        document.getElementById("btnSecurity").classList.remove("hidden");
+        document.getElementById("btnBackup").classList.remove("hidden");
+        document.getElementById("btnLogs").classList.remove("hidden"); 
+        document.getElementById("btnClearLogs").classList.remove("hidden"); 
+        document.getElementById("btnVisLogs").classList.remove("hidden"); 
+        document.getElementById("demo-mode-section").classList.remove("hidden");
+        document.getElementById("btnInvestment").classList.remove("hidden");
+        
+        document.getElementById("sec-manual-wallet").classList.remove("hidden");
+        document.getElementById("sec-set-wallet-balance").classList.remove("hidden");
+        document.getElementById("sec-set-profit-share").classList.remove("hidden");
+        document.getElementById("sec-manage-wallets").classList.remove("hidden");
+        document.getElementById("sec-rename-wallet").classList.remove("hidden");
+        document.getElementById("sec-profit-settings").classList.remove("hidden");
+        document.getElementById("sec-manage-services").classList.remove("hidden");
+        
+        document.getElementById("todoSection").classList.remove("hidden");
+        document.getElementById("todoInputArea").classList.remove("hidden");
+        document.getElementById("btnAddStock").classList.remove("hidden");
+        
+        document.getElementById("btnStock").classList.remove("hidden");
+        document.getElementById("btnUndo").classList.remove("hidden");
+        document.getElementById("btnClearHistory").classList.remove("hidden");
+        document.getElementById("btnHideExpired").classList.remove("hidden");
+    } 
+    else if (role === 'employee') {
+        if(logsVis !== 'no_employee' && logsVis !== 'admin_only') {
+            document.getElementById("btnLogs").classList.remove("hidden");
+        }
+        document.getElementById("demo-mode-section").classList.remove("hidden");
+        
+        document.getElementById("sec-manual-wallet").classList.remove("hidden");
+        
+        document.getElementById("todoSection").classList.remove("hidden");
+        document.getElementById("todoInputArea").classList.remove("hidden");
+        document.getElementById("sec-manage-services").classList.remove("hidden"); 
+        
+        document.getElementById("btnStock").classList.remove("hidden");
+        document.getElementById("btnUndo").classList.remove("hidden");
+        document.getElementById("btnHideExpired").classList.remove("hidden");
+        document.getElementById("btnClearHistory").classList.add("hidden");
+    }
+    else if (role === 'viewer_plus') {
+        if(logsVis !== 'no_viewer' && logsVis !== 'admin_only') {
+            document.getElementById("btnLogs").classList.remove("hidden");
+        }
+        document.getElementById("btnPurchase").classList.add("hidden");
+        
+        document.getElementById("todoSection").classList.remove("hidden");
+        document.getElementById("todoInputArea").classList.add("hidden");
+        document.getElementById("sec-manage-services").classList.remove("hidden");
+        
+        document.getElementById("btnUndo").classList.add("hidden");
+        document.getElementById("btnClearHistory").classList.add("hidden");
+        document.getElementById("btnHideExpired").classList.add("hidden");
+        document.getElementById("btnStock").classList.add("hidden"); 
+
+        document.querySelector("#generalNotes textarea").style.display = "none";
+        document.querySelector("#generalNotes button").style.display = "none";
+
+        showPage('history', document.getElementById('btnHistory'));
+    }
+    else if (role === 'viewer') {
+        if(logsVis !== 'no_viewer' && logsVis !== 'admin_only') {
+            document.getElementById("btnLogs").classList.remove("hidden");
+        }
+        document.getElementById("btnPurchase").classList.add("hidden");
+        document.getElementById("sec-manage-services").classList.remove("hidden");
+        
+        document.getElementById("btnUndo").classList.add("hidden");
+        document.getElementById("btnClearHistory").classList.add("hidden");
+        document.getElementById("btnHideExpired").classList.add("hidden");
+        document.getElementById("btnStock").classList.add("hidden"); 
+        
+        document.querySelector("#generalNotes textarea").style.display = "none";
+        document.querySelector("#generalNotes button").style.display = "none";
+
+        showPage('history', document.getElementById('btnHistory'));
+    }
+}
+
+function renderUsersTable() {
+    if(!currentUser || currentUser.role !== 'admin') return;
+    const users = safeJSON(store.users, []);
+    const tbody = document.getElementById("usersTableBody"); 
+    if(!tbody) return;
+    let rows = "";
+    users.forEach((u, index) => {
+        let actions = "";
+        if(u.username !== currentUser.username) {
+            let banBtn = u.status === 'active' ? `<button class="btn btn-danger" style="padding:5px 10px; font-size:12px" onclick="toggleBan(${index})">حظر</button>` : `<button class="btn btn-success" style="padding:5px 10px; font-size:12px; background:var(--success); color:white" onclick="toggleBan(${index})">فك حظر</button>`;
+            actions = `<div style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap"><button class="btn btn-primary" style="padding:5px 10px; font-size:12px" onclick="openEditUserModal(${index})"><i class="fas fa-edit"></i></button>${banBtn}<button class="btn btn-danger" style="padding:5px 10px; font-size:12px" onclick="deleteUser(${index})"><i class="fas fa-trash-alt"></i></button></div>`;
+        } else { actions = "<small>الحساب الحالي</small>"; }
+        let statusClass = u.status === 'active' ? 'security-status-active' : 'security-status-banned';
+        let statusText = u.status === 'active' ? 'نشط' : 'محظور';
+        rows += `<tr><td>${esc(u.username)}</td><td><span class="badge badge-info">${getRoleName(u.role)}</span></td><td class="${statusClass}">${statusText}</td><td style="font-size:12px">${u.lastLogin}</td><td style="font-size:12px">${u.deviceInfo}</td><td>${actions}</td></tr>`;
+    });
+    tbody.innerHTML = rows;
+}
+
+function renderPagination(totalItems, pageKey, renderFunc, containerId) {
+    let totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+    let container = document.getElementById(containerId);
+    if(!container) return;
+    
+    if(currentPage[pageKey] > totalPages) currentPage[pageKey] = totalPages;
+    if(currentPage[pageKey] < 1) currentPage[pageKey] = 1;
+
+    let html = `
+        <button class="page-btn ${currentPage[pageKey] === 1 ? 'disabled' : ''}" onclick="changePage('${pageKey}', -1, ${renderFunc.name})">السابق</button>
+        <div class="page-info">صفحة ${currentPage[pageKey]} من ${totalPages}</div>
+        <button class="page-btn ${currentPage[pageKey] === totalPages ? 'disabled' : ''}" onclick="changePage('${pageKey}', 1, ${renderFunc.name})">التالي</button>
+    `;
+    container.innerHTML = html;
+}
+
+function changePage(key, dir, func) {
+    currentPage[key] += dir;
+    func();
+}
+
+function switchLogsTab(tab, btn) {
+    currentLogsTab = tab;
+    document.querySelectorAll('#logs .tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentPage.logs = 1;
+    refreshLogs();
+}
+
+function refreshLogs() {
+    let logs = safeJSON(store.activityLog, []);
+    let search = document.getElementById("logsSearch").value.toLowerCase();
+    const tbody = document.getElementById("logsTableBody");
+    let isViewer = currentUser && currentUser.role === 'viewer';
+    
+    let tabFiltered = logs.filter(log => {
+        if(currentLogsTab === 'financial') return log.details != null;
+        else return log.details == null;
+    });
+
+    let filtered = tabFiltered.filter(log => {
+        return !search || log.user.toLowerCase().includes(search) || log.action.toLowerCase().includes(search);
+    });
+
+    renderPagination(filtered.length, 'logs', refreshLogs, 'logsPagination');
+    let paginated = filtered.slice((currentPage.logs - 1) * ITEMS_PER_PAGE, currentPage.logs * ITEMS_PER_PAGE);
+
+    let rows = "";
+    paginated.forEach((log) => {
+        let detailsBtn = "";
+        if(log.details && !isViewer) {
+            detailsBtn = `<button class="btn btn-primary" style="padding:5px 10px; font-size:12px" onclick='showModalDetails(${JSON.stringify(log.details)})'><i class="fas fa-eye"></i></button>`;
+        } else if (!log.details) {
+            detailsBtn = `<span style="color:var(--text-muted); font-size:12px;">-</span>`;
+        }
+        rows += `<tr><td style="direction:ltr; text-align:right">${log.time}</td><td><b>${esc(log.user)}</b></td><td>${esc(log.action)}</td><td>${detailsBtn}</td></tr>`;
+    });
+    tbody.innerHTML = rows || `<tr><td colspan='4' style='text-align:center; padding:20px; color:var(--text-muted)'>لا توجد بيانات</td></tr>`;
+}
+
+async function clearLogs() {
+    if(currentUser.role !== 'admin') return notify("للأدمن فقط", "error");
+    
+    let tabName = currentLogsTab === 'financial' ? "الحركات المالية" : "الحركات العامة";
+    let res = await showConfirm(`مسح ${tabName}`, `سيتم حذف سجلات ${tabName} نهائياً.`, "مسح الكل", "إلغاء", '<i class="fas fa-trash-alt"></i>', "مسح أقدم صفحة");
+    if(!res) return;
+    
+    let allLogs = safeJSON(store.activityLog, []);
+    let targetLogs = allLogs.filter(log => (currentLogsTab === 'financial' ? log.details != null : log.details == null));
+    
+    let logsToSave = [];
+    if(res === 'third') {
+        let itemsToRemove = targetLogs.slice(-ITEMS_PER_PAGE);
+        logsToSave = allLogs.filter(l => !itemsToRemove.includes(l));
+    } else {
+        logsToSave = allLogs.filter(log => (currentLogsTab === 'financial' ? log.details == null : log.details != null));
+    }
+    
+    store.activityLog = JSON.stringify(logsToSave); fbSave("activityLog", logsToSave);
+    
+    logAction(`قام الأدمن بمسح ${res === 'third' ? 'أقدم 50 سجل من' : 'كافة'} ${tabName}`);
+    
+    currentPage.logs = 1;
+    refreshLogs();
+    
+    notify("تم المسح بنجاح");
+}
+
 function addNewUser() {
     const u = document.getElementById("newUserName").value.trim(), p = document.getElementById("newUserPass").value.trim(), r = document.getElementById("newUserRole").value;
     if(!u || !p) return notify("يرجى ملء البيانات", "error");
-    if(appData.users.some(x => x.username.toLowerCase() === u.toLowerCase())) return notify("اسم المستخدم موجود", "error");
-    
-    dbPush('users', { username: u, password: p, role: r, status: "active", lastLogin: "-", deviceInfo: "-" });
+    let users = safeJSON(store.users, []);
+    if(users.some(x => x.username.toLowerCase() === u.toLowerCase())) return notify("اسم المستخدم موجود", "error");
+    users.push({ username: u, password: p, role: r, status: "active", lastLogin: "-", deviceInfo: "-" });
+    store.users = JSON.stringify(users); fbSave("users", users);
     logAction(`إضافة مستخدم جديد: ${u} بصلاحية ${r}`);
     document.getElementById("newUserName").value = ""; document.getElementById("newUserPass").value = "";
-    notify("تم إضافة المستخدم");
+    renderUsersTable();  notify("تم إضافة المستخدم");
 }
 
-function toggleBan(fid) {
-    let u = appData.users.find(x => x._fid === fid);
-    if(!u) return;
-    let newState = u.status === 'active' ? 'banned' : 'active';
-    dbUpdate(`users/${fid}`, { status: newState });
-    logAction(`تغيير حالة المستخدم ${u.username} إلى ${newState}`);
+function toggleBan(index) {
+    let users = safeJSON(store.users, []);
+    let newState = users[index].status === 'active' ? 'banned' : 'active';
+    users[index].status = newState;
+    store.users = JSON.stringify(users); fbSave("users", users);
+    logAction(`تغيير حالة المستخدم ${users[index].username} إلى ${newState}`);
+    renderUsersTable(); 
 }
 
-async function deleteUser(fid) {
-    let u = appData.users.find(x => x._fid === fid);
+async function deleteUser(index) {
     let ok = await showConfirm("حذف المستخدم", "هل تريد حذف هذا المستخدم نهائياً؟", "حذف", "إلغاء", '<i class="fas fa-user-times"></i>');
     if(!ok) return;
-    logAction(`حذف المستخدم: ${u.username}`);
-    dbRemove(`users/${fid}`);
-}
-
-function openEditUserModal(fid) {
-    let u = appData.users.find(x => x._fid === fid);
-    document.getElementById("editUserKey").value = fid;
-    document.getElementById("editUserName").value = u.username;
-    document.getElementById("editUserPassInput").value = "";
-    document.getElementById("editUserRoleSelect").value = u.role;
-    document.getElementById("editUserModal").classList.remove("hidden");
-}
-
-async function saveUserEdit() {
-    let fid = document.getElementById("editUserKey").value;
-    let newPass = document.getElementById("editUserPassInput").value.trim();
-    let newRole = document.getElementById("editUserRoleSelect").value;
-    
-    let updates = { role: newRole };
-    if(newPass) updates.password = newPass;
-    
-    let u = appData.users.find(x => x._fid === fid);
-    if(u.username === currentUser.username && newRole !== 'admin') {
-        let ok = await showConfirm("تغيير صلاحيتك", "ستقلل صلاحيتك من أدمن. هل أنت متأكد؟", "نعم", "إلغاء", '<i class="fas fa-exclamation-triangle"></i>');
-        if(!ok) return;
-    }
-    
-    dbUpdate(`users/${fid}`, updates);
-    logAction(`تعديل بيانات المستخدم: ${u.username}`);
-    document.getElementById("editUserModal").classList.add("hidden");
-    notify("تم تحديث بيانات المستخدم");
+    let users = safeJSON(store.users, []);
+    logAction(`حذف المستخدم: ${users[index].username}`);
+    users.splice(index, 1);
+    store.users = JSON.stringify(users); fbSave("users", users);
+    renderUsersTable(); 
 }
 
 function changeMyPassword() {
     let newP = document.getElementById("changePassInput").value.trim();
     if(!newP) return notify("أدخل كلمة المرور الجديدة", "error");
-    dbUpdate(`users/${currentUser._fid}`, { password: newP });
-    document.getElementById("changePassInput").value = "";
-    logAction("قام بتغيير كلمة المرور الخاصة به");
-    notify("تم التغيير بنجاح");
+    let users = safeJSON(store.users, []);
+    let myIndex = users.findIndex(u => u.username === currentUser.username);
+    if(myIndex !== -1) {
+        users[myIndex].password = newP;
+        currentUser.password = newP; 
+        store.users = JSON.stringify(users); fbSave("users", users);
+        document.getElementById("changePassInput").value = "";
+        logAction("قام بتغيير كلمة المرور الخاصة به");
+         notify("تم التغيير بنجاح");
+    }
 }
 
-// --- WALLETS & TRANSFERS (CLOUD) ---
-function addNewWallet(){ 
-    let n=newWalletName.value.trim(), c=newWalletCurrency.value; 
-    if(!n||appData.wallets[n]) return notify("خطأ بالاسم","error"); 
-    dbSet(`wallets/${n}`, {bal:0, cur:c, active:true});
-    newWalletName.value=""; logAction(`إنشاء محفظة جديدة: ${n}`); notify("تمت"); 
-}
 
-function renameWallet(){ 
-    let o=renameWalletSelect.value, n=renameWalletInput.value.trim(); 
-    if(!n||appData.wallets[n]) return notify("خطأ","error");
+function showPage(id, btn){
+    if(currentUser) {
+        if((currentUser.role === 'viewer' || currentUser.role === 'viewer_plus') && (id === 'purchase' || id === 'security' || id === 'backup')) return notify("ليس لديك صلاحية", "error");
+        if(currentUser.role === 'employee' && (id === 'security' || id === 'backup')) return notify("ليس لديك صلاحية", "error");
+        
+        if(id === 'investment' && currentUser.role !== 'admin') return notify("للأدمن فقط", "error");
+        if(id === 'stock' && (currentUser.role === 'viewer' || currentUser.role === 'viewer_plus')) return notify("ليس لديك صلاحية", "error");
+    }
+    document.querySelectorAll(".card").forEach(x=>x.classList.add("hidden"));
+    document.getElementById(id).classList.remove("hidden");
+    if(window.innerWidth <= 768) { let sidebar = document.getElementById("mySidebar"); if(sidebar.classList.contains("active")) toggleSidebar(); }
+    document.querySelectorAll(".sidebar button").forEach(b => b.classList.remove("active"));
+    if(btn) btn.classList.add("active");
     
-    // Cloud Atomic Update difficult for rename key. Strategy: Copy then Delete.
-    let data = appData.wallets[o];
-    let updates = {};
-    updates[`wallets/${n}`] = data;
-    updates[`wallets/${o}`] = null; // Delete old
-    db.ref('megaStoreData').update(updates);
-    
-    // Also update purchases history (heavy op, but necessary)
-    // Note: In a real SQL db this is easier. Here we stick to simple logic.
-    renameWalletInput.value=""; 
-    logAction(`تغيير اسم محفظة من ${o} إلى ${n}`); 
-    notify("تم"); 
+    if(id === 'purchase') { loadServices(); loadPurchaseStock(); }
+    if(id === 'generalNotes') refreshGeneralNotes();
+    if(id === 'investment') refreshInvestment();
+    if(id === 'history') refreshHistory();
+    if(id === 'wallets') refreshWallets();
+    if(id === 'expiring') refreshExpiring();
+    if(id === 'analytics') refreshAnalytics();
+    if(id === 'security') renderUsersTable();
+    if(id === 'logs') refreshLogs();
+    if(id === 'stock') refreshStock();
+    if(id === 'modify') { refreshTodoList(); renderServicesSettings(); updateStorageUI(); }
 }
 
-async function setWallet(){ 
-    if(currentUser.role !== 'admin') return notify("للأدمن فقط", "error");
-    let reason = await showPrompt("سبب التعيين المباشر", "هذا الحقل إجباري", "أدخل سبب التعيين...", '<i class="fas fa-edit"></i>');
-    if(!reason) return;
-    let wName = modWallet.value;
-    let before = appData.wallets[wName].bal;
-    let newVal = +modAmount.value;
-    
-    dbUpdate(`wallets/${wName}`, { bal: newVal });
-    logAction(`تعيين رصيد محفظة ${wName}`, { type: 'manual', wallet: wName, reason: reason, before: before, after: newVal, diff: (newVal - before) });
-    notify("تم"); 
+function toggleSidebar() {
+    let sidebar = document.getElementById("mySidebar"), overlay = document.querySelector(".sidebar-overlay"), btnIcon = document.querySelector("#menuBtn i");
+    sidebar.classList.toggle("active"); overlay.classList.toggle("active");
+    if(sidebar.classList.contains("active")){ btnIcon.classList.remove("fa-bars"); btnIcon.classList.add("fa-times"); } else { btnIcon.classList.remove("fa-times"); btnIcon.classList.add("fa-bars"); }
 }
 
-async function deleteWallet(){ 
-    let ok = await showConfirm("حذف المحفظة", `هل تريد حذف محفظة "${modWallet.value}" نهائياً؟`, "حذف", "إلغاء", '<i class="fas fa-trash-alt"></i>');
+function toggleDarkMode() {
+    document.body.classList.toggle("dark-mode");
+    let isDark = document.body.classList.contains("dark-mode");
+    localStorage.setItem("darkMode", isDark);
+    
+    if(document.getElementById("darkModeToggle")) document.getElementById("darkModeToggle").checked = isDark;
+    if(document.getElementById("loginThemeCheck")) document.getElementById("loginThemeCheck").checked = isDark;
+}
+
+let _notifyQueue = [];
+let _notifyBusy = false;
+function notify(msg, type="success") {
+    _notifyQueue.push({msg, type});
+    if(!_notifyBusy) _processNotifyQueue();
+}
+function _processNotifyQueue() {
+    if(_notifyQueue.length === 0) { _notifyBusy = false; return; }
+    _notifyBusy = true;
+    let {msg, type} = _notifyQueue.shift();
+    let n = document.getElementById("notification");
+    n.innerHTML = (type==='success' ? '<i class="fas fa-check-circle"></i> ' : '<i class="fas fa-exclamation-triangle"></i> ') + msg;
+    n.style.background = type === "success" ? "#10b981" : "#ef4444";
+    n.style.display = "flex";
+    setTimeout(() => { n.style.display = "none"; setTimeout(_processNotifyQueue, 200); }, 2800);
+}
+
+function loadWallets(){
+    let wallets=safeJSON(store.wallets, {});
+    const selects = [wallet, modWallet, fromWallet, renameWalletSelect, tfFromWallet, tfToWallet, wWalletAhmad, wWalletMohamed, wWalletStore];
+    selects.forEach(s => { 
+        if(s) { 
+            s.innerHTML = s.id.startsWith("wWallet") ? '<option value="">اختر محفظة السحب</option>' : ""; 
+            Object.keys(wallets).forEach(w=>{ 
+                let o=document.createElement("option"); 
+                o.value=w; o.text=w + ` (${wallets[w].cur})`; 
+                s.appendChild(o); 
+            }); 
+        } 
+    });
+}
+function loadServices() {
+    let services = safeJSON(store.services, []);
+    let selStock = document.getElementById("stService");
+    
+    let html = '<option value="">اختر الخدمة...</option>';
+    services.forEach(s => { html += `<option value="${esc(s)}">${esc(s)}</option>`; });
+    if(selStock) selStock.innerHTML = html;
+}
+function loadPurchaseStock() {
+    let stock = safeJSON(store.stock, []);
+    let selPurchase = document.getElementById("sub");
+    if(selPurchase) {
+        let html = '<option value="">اختر من المخزون المتاح...</option>';
+        stock.filter(s => s.status === 'active').forEach(s => {
+            let sp = s.soldProfiles || 0;
+            let tp = s.totalProfiles || 1;
+            html += `<option value="${s.id}">${esc(s.displayName || s.service)} (${sp}/${tp})</option>`;
+        });
+        selPurchase.innerHTML = html;
+    }
+}
+function loadProfitSettings(){
+    let s = safeJSON(store.settings, {});
+    setAhmadProp.value = s.ahmad; setMohamedProp.value = s.mohamed; setStoreProp.value = s.store;
+    setDeductCost.checked = s.deductCost; setExchangeRate.value = s.exchangeRate || 0;
+}
+function saveProfitSettings(){
+    let a = +setAhmadProp.value, m = +setMohamedProp.value, s = +setStoreProp.value;
+    if(a + m + s !== 100){ notify("مجموع النسب يجب أن يساوي 100%","error"); return; }
+    let sObj = safeJSON(store.settings, {});
+    sObj.ahmad = a; sObj.mohamed = m; sObj.store = s; sObj.deductCost = setDeductCost.checked; sObj.exchangeRate = +setExchangeRate.value;
+    store.settings = JSON.stringify(sObj); fbSave("settings", sObj);
+    logAction("تعديل إعدادات توزيع الأرباح");
+     notify("تم الحفظ");
+}
+function validatePhoneInput(el) {
+    let v = el.value.trim();
+    if(!v) { el.style.borderColor = ""; return; }
+    el.style.borderColor = "var(--success)";
+}
+
+function addPurchase(){
+    if(currentUser.role === 'viewer' || currentUser.role === 'viewer_plus') return;
+    
+    let paid = parseFloat(paidAmount.value);
+    let cost = parseFloat(costAmount.value);
+    
+    if(isNaN(paid) || isNaN(cost) || paid < 0 || cost < 0) { 
+        notify("يرجى إدخال مبالغ صحيحة وموجبة", "error"); 
+        return; 
+    }
+    
+    let stockId = sub.value;
+    if(!stockId) { notify("يرجى اختيار الاشتراك من المخزون","error"); return; }
+    let stockList = safeJSON(store.stock, []);
+    let stItem = stockList.find(x => x.id === stockId);
+    if(!stItem || stItem.status !== 'active') { notify("هذا الاشتراك لم يعد متاحاً","error"); return; }
+    
+    let paidCur=paidCurrency.value, costCur=costCurrency.value;
+    let from=fromWallet.value, duration = +subDuration.value;
+    let settings=safeJSON(store.settings, {});
+    let walletsTmp=safeJSON(store.wallets, {});
+    
+    if(walletsTmp[from].bal < cost && walletsTmp[from].cur == costCur){ notify("رصيد غير كافي","error"); return; }
+    
+    let rate = settings.exchangeRate && settings.exchangeRate > 0 ? settings.exchangeRate : 0;
+    if(paidCur !== costCur && rate === 0) {
+        notify("عملتا الدفع والتكلفة مختلفتان. يرجى تعيين سعر الصرف في الإعدادات أولاً.", "error");
+        return;
+    }
+    
+    let profit = settings.deductCost 
+        ? (paidCur === costCur ? paid - cost : (paidCur === '$' ? paid - cost/rate : paid - cost*rate))
+        : paid;
+    let profitStr = `${fix(profit)} ${paidCur}`;
+    
+    let cleanName = stItem.service + ((stItem.totalProfiles || 1) > 1 ? " Shared" : "");
+
+    document.getElementById("purchaseConfirmBody").innerHTML = `
+        <div style="display:grid; gap:8px;">
+            <div><i class="fas fa-tag"></i> <b>الخدمة:</b> ${esc(cleanName)}</div>
+            <div><i class="fas fa-user"></i> <b>العميل:</b> ${esc(customer.value)||'—'} ${customerPhone.value?'('+esc(customerPhone.value)+')':''}</div>
+            <div><i class="fas fa-calendar"></i> <b>المدة:</b> ${duration} شهر</div>
+            <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border-color)">
+                <span style="color:var(--success)"><i class="fas fa-money-bill-wave"></i> مدفوع: ${paid}${paidCur}</span> &nbsp;|&nbsp;
+                <span style="color:var(--danger)"><i class="fas fa-hand-holding-usd"></i> تكلفة: ${cost}${costCur}</span>
+            </div>
+            <div><i class="fas fa-chart-line"></i> <b>صافي الربح تقريباً:</b> <b style="color:var(--primary)">${profitStr}</b></div>
+            <div style="font-size:12px; margin-top:6px; color:var(--text-muted)"><i class="fas fa-arrow-left"></i> من: ${esc(from)} &nbsp;|&nbsp; <i class="fas fa-arrow-right"></i> إلى: ${esc(wallet.value)}</div>
+        </div>`;
+    
+    document.getElementById("purchaseConfirmModal").style.display = "flex";
+    document.getElementById("purchaseConfirmOkBtn").onclick = () => {
+        document.getElementById("purchaseConfirmModal").style.display = "none";
+        _executePurchase(paid, cost, paidCur, costCur, from, duration, rate, settings, stItem, cleanName);
+    };
+}
+
+function _executePurchase(paid, cost, paidCur, costCur, from, duration, rate, settings, stItem, cleanName) {
+    let wallets=safeJSON(store.wallets, {}), invest=safeJSON(store.invest, {}), purchases=safeJSON(store.purchases, []);
+    
+    let wBefore = wallets[from].bal;
+    let tBefore = wallets[wallet.value].bal;
+    let invest_before_profit = JSON.parse(JSON.stringify(invest));
+    
+    wallets[from].bal -= cost;
+    
+    if(costCur === '$') {
+        if(invest.store.d >= cost) invest.store.d -= cost;
+        else { let rem = cost - invest.store.d; invest.store.d = 0; invest.store.s -= (rem * rate); }
+    } else {
+        if(invest.store.s >= cost) invest.store.s -= cost;
+        else { let rem = cost - invest.store.s; invest.store.s = 0; if(rate > 0) invest.store.d -= (rem / rate); }
+    }
+    
+    let profitBase = paid, costInPaidCurrency = 0;
+    if(settings.deductCost) {
+        if(paidCur === costCur) { profitBase = paid - cost; costInPaidCurrency = cost; }
+        else { let costCv = (paidCur === '$') ? cost/rate : cost*rate; profitBase = paid - costCv; costInPaidCurrency = costCv; }
+    }
+    
+    let aP = +(profitBase * (settings.ahmad/100)).toFixed(2);
+    let mP = +(profitBase * (settings.mohamed/100)).toFixed(2);
+    let sP = +(profitBase * (settings.store/100)).toFixed(2);
+    
+    if(paidCur === '$') {
+        invest.ahmad.d += aP; invest.mohamed.d += mP; invest.store.d += sP;
+        if(settings.deductCost) invest.store.d += costInPaidCurrency;
+    } else {
+        invest.ahmad.s += aP; invest.mohamed.s += mP; invest.store.s += sP;
+        if(settings.deductCost) invest.store.s += costInPaidCurrency;
+    }
+    
+    wallets[wallet.value].bal += paid;
+    
+    let d = new Date(), exp = new Date(d);
+    exp.setMonth(exp.getMonth() + duration);
+    if(exp.getDate() !== d.getDate()) exp.setDate(0);
+    
+    let buyerInfo = (customer.value ? customer.value : "عميل") + (customerPhone.value ? ` - ${customerPhone.value}` : "");
+    if(!stItem.buyers) stItem.buyers = [];
+    stItem.buyers.push(buyerInfo);
+    
+    stItem.soldProfiles = (stItem.soldProfiles || 0) + 1;
+    if(stItem.soldProfiles >= (stItem.totalProfiles || 1)) {
+        stItem.status = 'sold';
+        stItem.soldDate = new Date().toLocaleDateString('ar-EG');
+    }
+    let stockList = safeJSON(store.stock, []);
+    let stIdx = stockList.findIndex(x => x.id === stItem.id);
+    if(stIdx !== -1) stockList[stIdx] = stItem;
+    store.stock = JSON.stringify(stockList); fbSave("stock", stockList);
+
+    purchases.push({
+        id: Date.now() + '_' + Math.random().toString(36).substr(2,5),
+        date: d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(),
+        customer: customer.value||"عميل",
+        phone: customerPhone.value||"-",
+        sub: cleanName,
+        stockId: stItem.id,
+        duration: duration,
+        paid: paid+paidCur,
+        cost: cost+costCur,
+        wallet: wallet.value,
+        fromWallet: from,
+        expiry: exp.getTime(),
+        investSnapshot: invest_before_profit
+    });
+    
+    store.wallets = JSON.stringify(wallets); fbSave("wallets", wallets);
+    store.invest = JSON.stringify(invest); fbSave("invest", invest);
+    store.purchases = JSON.stringify(purchases); fbSave("purchases", purchases);
+    
+    logAction(`إضافة عملية شراء: ${cleanName} للعميل ${customer.value}`, {
+        type: 'purchase',
+        customer: customer.value||"عميل",
+        sub: cleanName,
+        cost: cost+costCur, paid: paid+paidCur,
+        wName: from, wBefore: wBefore, wAfter: wallets[from].bal,
+        toName: wallet.value, tBefore: tBefore, tAfter: wallets[wallet.value].bal
+    });
+    
+    currentPage.history = 1;
+    loadPurchaseStock();
+    refreshAll();  notify("تمت العملية بنجاح");
+    paidAmount.value=""; costAmount.value=""; customer.value=""; sub.value=""; customerPhone.value=""; subDuration.value="1";
+}
+function refreshAll(){
+    refreshWallets();
+    let p = safeJSON(store.purchases, []);
+    let now = new Date();
+    let todayStr = now.getFullYear() + '-' + (now.getMonth()+1) + '-' + now.getDate();
+    let isRestricted = currentUser ? (currentUser.role === 'viewer') : true;
+    document.getElementById("statSales").textContent = p.filter(x => x.date.includes(todayStr)).length;
+    if(isRestricted) {
+        document.getElementById("statDollar").textContent = "****";
+        document.getElementById("statShekel").textContent = "****";
+    }
+    
+    let days3 = 3 * 86400000, nowMs = now.getTime();
+    let expiringCount = p.filter(x => x.expiry && !x.expiryDismissed && (x.expiry - nowMs < days3 && x.expiry - nowMs > -2592000000)).length;
+    let badge = document.getElementById("expiryBadge");
+    if(badge) { badge.textContent = expiringCount; badge.style.display = expiringCount > 0 ? "inline-flex" : "none"; }
+    
+    const visMap = {
+        'history': refreshHistory,
+        'investment': refreshInvestment,
+        'generalNotes': refreshGeneralNotes,
+        'expiring': refreshExpiring,
+        'analytics': refreshAnalytics,
+        'logs': refreshLogs,
+        'stock': refreshStock,
+        'modify': () => { refreshTodoList(); renderServicesSettings(); updateStorageUI(); }
+    };
+    
+    refreshInvestment();
+    refreshExpiring();
+    
+    document.querySelectorAll(".main-content > .card:not(.hidden)").forEach(card => {
+        let id = card.id;
+        if(visMap[id]) visMap[id]();
+    });
+    
+    if(!document.getElementById("history").classList.contains("hidden")) refreshHistory();
+    if(!document.getElementById("generalNotes").classList.contains("hidden")) refreshGeneralNotes();
+    if(!document.getElementById("stock").classList.contains("hidden")) refreshStock();
+}
+function refreshExpiring() {
+    let p = safeJSON(store.purchases, []);
+    let body = document.getElementById("expiringBody"); 
+    if(!body) return;
+    let now = new Date().getTime(), days3 = 3 * 86400000;
+    
+    let filtered = p.map((d, i) => ({ d, i })).filter(x => x.d.expiry && !x.d.expiryDismissed && (x.d.expiry - now < days3 && x.d.expiry - now > -2592000000));
+    filtered.sort((a, b) => a.d.expiry - b.d.expiry);
+    
+    renderPagination(filtered.length, 'expiring', refreshExpiring, 'expiringPagination');
+    let paginated = filtered.slice((currentPage.expiring - 1) * ITEMS_PER_PAGE, currentPage.expiring * ITEMS_PER_PAGE);
+    
+    let isRestricted = currentUser ? (currentUser.role === 'viewer') : true;
+    let isViewer = currentUser ? (currentUser.role === 'viewer' || currentUser.role === 'viewer_plus') : true;
+    
+    let rows = "";
+    paginated.forEach(x => {
+        let item = x.d, daysLeft = Math.ceil((item.expiry - now) / 86400000);
+        let status = daysLeft <= 0 ? 'منتهي' : daysLeft + ' يوم';
+        let cleanPhone = (item.phone||'').replace(/\D/g, '');
+        if(cleanPhone.startsWith('0')) cleanPhone = '970' + cleanPhone.substring(1);
+        let wa = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(`السلام عليكم ${item.customer}، نود تذكيركم بانتهاء اشتراك ${item.sub} بعد ${status}. للتجديد يرجى التواصل معنا.`)}`;
+        let btnHTML = isViewer ? '' : `<a href="${wa}" target="_blank" onclick="markAsReminded(${x.i})" class="btn btn-whatsapp"><i class="fab fa-whatsapp"></i> تذكير</a>`;
+        let phoneDisplay = isRestricted ? '----' : esc(item.phone);
+        let serviceDisplay = isRestricted ? '----' : `<b>${esc(item.sub)}</b>`;
+        rows += `<tr class="${item.reminded?'reminded':''}"><td>${serviceDisplay}</td><td>${esc(item.customer)}</td><td>${phoneDisplay}</td><td>${new Date(item.expiry).toLocaleDateString('ar-EG')}</td><td><span class="badge ${daysLeft<=0?'badge-danger':'badge-warning'}">${status}</span></td><td>${btnHTML}</td></tr>`;
+    });
+    body.innerHTML = rows || "<tr><td colspan='6' style='text-align:center; padding:30px; color:var(--text-muted)'>لا توجد تنبيهات</td></tr>";
+    
+    let badge = document.getElementById("expiryBadge");
+    if(badge) { badge.textContent = filtered.length; badge.style.display = filtered.length > 0 ? "inline-flex" : "none"; }
+}
+function markAsReminded(i) { let p = safeJSON(store.purchases, []); p[i].reminded = true; store.purchases = JSON.stringify(p); fbSave("purchases", p); refreshExpiring();  }
+async function deleteExpired() { 
+    if(currentUser.role === 'viewer' || currentUser.role === 'viewer_plus') return; 
+    let ok = await showConfirm("إخفاء الاشتراكات المنتهية", "سيتم إخفاء جميع الاشتراكات المنتهية من القائمة.", "إخفاء", "إلغاء", '<i class="fas fa-eye-slash"></i>');
     if(!ok) return;
-    dbRemove(`wallets/${modWallet.value}`);
-    logAction(`حذف محفظة ${modWallet.value}`); 
-    notify("تم الحذف"); 
+    let p = safeJSON(store.purchases, []), now = new Date().getTime(); 
+    p.forEach(x => { if(x.expiry && x.expiry < now) x.expiryDismissed = true; }); 
+    store.purchases = JSON.stringify(p); fbSave("purchases", p); logAction("إخفاء الاشتراكات المنتهية"); currentPage.expiring = 1; refreshAll();  
+}
+function refreshWallets(){
+    let w=safeJSON(store.wallets, {}), td=0, ts=0;
+    let isRestricted = currentUser ? (currentUser.role === 'viewer') : true;
+    let rows="";
+    for(let k in w){
+        let act = w[k].active !== false;
+        let balDisplay = isRestricted ? '****' : fix(w[k].bal);
+        rows+=`<tr><td><b>${esc(k)}</b></td><td><span class="badge ${w[k].cur=='$'?'badge-success':'badge-info'}">${w[k].cur}</span></td><td style="text-align:center; font-weight:800">${balDisplay}</td><td>${act?'<i class="fas fa-check-circle" style="color:var(--success)"></i>':'<i class="fas fa-times-circle" style="color:var(--danger)"></i>'}</td></tr>`;
+        if(w[k].cur=="$") td+=w[k].bal; else ts+=w[k].bal;
+    }
+    walletList.innerHTML=rows;
+    if(!isRestricted) {
+        statDollar.textContent=fix(td)+" $"; statShekel.textContent=fix(ts)+" ₪";
+    }
+}
+function refreshHistory(){
+    let p = safeJSON(store.purchases, []);
+    let isRestricted = currentUser ? (currentUser.role === 'viewer') : true;
+    let v = document.getElementById("historySearch").value.toLowerCase();
+    
+    let filtered = p.slice().reverse().filter(item => {
+        return !v || (item.customer||'').toLowerCase().includes(v) || (item.sub||'').toLowerCase().includes(v) || (item.phone||'').includes(v);
+    });
+    
+    renderPagination(filtered.length, 'history', refreshHistory, 'historyPagination');
+    let paginated = filtered.slice((currentPage.history - 1) * ITEMS_PER_PAGE, currentPage.history * ITEMS_PER_PAGE);
+    
+    let rows = "";
+    paginated.forEach(item => {
+        let phoneD = isRestricted ? '----' : esc(item.phone);
+        let subD = isRestricted ? '----' : `<span class="badge badge-info">${esc(item.sub)}</span>`;
+        let paidD = isRestricted ? '----' : esc(item.paid);
+        let costD = isRestricted ? '----' : esc(item.cost);
+        let walletD = isRestricted ? '----' : esc(item.wallet);
+        rows+=`<tr><td>${item.date}</td><td><b>${esc(item.customer)}</b></td><td>${phoneD}</td><td>${subD}</td><td>${item.duration||'-'} شهر</td><td style="color:var(--success)">${paidD}</td><td style="color:var(--danger)">${costD}</td><td>${walletD}</td></tr>`;
+    });
+    document.getElementById("historyBody").innerHTML = rows || `<tr><td colspan='8' style='text-align:center; padding:20px; color:var(--text-muted)'>لا توجد بيانات</td></tr>`;
+}
+function filterHistory() { refreshHistory(); }
+
+function refreshInvestment(){
+    let i=safeJSON(store.invest, {});
+    let isRestricted = currentUser ? (currentUser.role === 'viewer') : true;
+    let aD = isRestricted ? "****" : `${fix(i.ahmad.d)}$ | ${fix(i.ahmad.s)}₪`;
+    let mD = isRestricted ? "****" : `${fix(i.mohamed.d)}$ | ${fix(i.mohamed.s)}₪`;
+    let sD = isRestricted ? "****" : `${fix(i.store.d)}$ | ${fix(i.store.s)}₪`;
+    
+    investBox.innerHTML=`
+    <div class="stat-card" style="border-right:5px solid #10b981; flex-direction:column; align-items:flex-start">
+        <div style="font-size:14px; color:var(--text-muted)">حصة أحمد</div>
+        <div style="font-size:20px; font-weight:800">${aD}</div>
+    </div>
+    <div class="stat-card" style="border-right:5px solid #f59e0b; flex-direction:column; align-items:flex-start">
+        <div style="font-size:14px; color:var(--text-muted)">حصة محمد</div>
+        <div style="font-size:20px; font-weight:800">${mD}</div>
+    </div>
+    <div class="stat-card" style="border-right:5px solid #6366f1; flex-direction:column; align-items:flex-start">
+        <div style="font-size:14px; color:var(--text-muted)">رأس مال المتجر</div>
+        <div style="font-size:20px; font-weight:800">${sD}</div>
+    </div>`;
+}
+function refreshAnalytics() {
+    let invest = safeJSON(store.invest, {}), purchases = safeJSON(store.purchases, []);
+    if (myProfitChart) myProfitChart.destroy();
+    
+    if(currentUser && currentUser.role === 'viewer') {
+    } else {
+        myProfitChart = new Chart(document.getElementById('profitChart').getContext('2d'), { type: 'doughnut', data: { labels: ['أحمد', 'محمد', 'المتجر'], datasets: [{ data: [invest.ahmad.d*3.5+invest.ahmad.s, invest.mohamed.d*3.5+invest.mohamed.s, invest.store.d*3.5+invest.store.s], backgroundColor: ['#10b981', '#f59e0b', '#6366f1'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false } });
+    }
+    
+    let months = {}, labels = [], data = [];
+    for(let i=5; i>=0; i--){ let d = new Date(); d.setMonth(d.getMonth() - i); labels.push((d.getMonth()+1)+'/'+d.getFullYear()); months[labels[labels.length-1]] = 0; }
+    purchases.forEach(p => { let d = new Date(p.date), k = (d.getMonth()+1)+'/'+d.getFullYear(); if(months[k] !== undefined) months[k]++; });
+    labels.forEach(l => data.push(months[l]));
+    
+    if (mySalesChart) mySalesChart.destroy();
+    mySalesChart = new Chart(document.getElementById('salesChart').getContext('2d'), { type: 'bar', data: { labels: labels, datasets: [{ label: 'مبيعات', data: data, backgroundColor: '#6366f1', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } } });
+}
+function addGeneralNote(){ let t=gnText.value.trim(); if(!t)return; let n=safeJSON(store.generalNotes, []); n.push({text:t, date:new Date().toLocaleString("ar-EG")}); store.generalNotes = JSON.stringify(n); fbSave("generalNotes", n); gnText.value=""; logAction("إضافة ملاحظة جديدة"); refreshGeneralNotes();  }
+function refreshGeneralNotes(){ 
+    let n = safeJSON(store.generalNotes, []); 
+    let box = document.getElementById("generalNotesBox");
+    if(!box) return; 
+    if(currentUser && currentUser.role === 'viewer') { box.innerHTML = ""; return; }
+    let rows = "";
+    n.forEach((x,i)=>{ 
+        let isViewerPlus = currentUser ? (currentUser.role === 'viewer_plus') : true;
+        let delBtn = isViewerPlus ? '' : `<i class="fas fa-trash-alt" onclick="deleteNote(${i})" style="color:var(--danger); cursor:pointer"></i>`;
+        rows += `<div class="todo-item" style="border-right-color:var(--primary)"><div><small>${x.date}</small><div>${esc(x.text)}</div></div>${delBtn}</div>`; 
+    }); 
+    box.innerHTML = rows;
+}
+function deleteNote(i){ if(currentUser.role === 'viewer' || currentUser.role === 'viewer_plus') return; let n=safeJSON(store.generalNotes, []); n.splice(i,1); store.generalNotes = JSON.stringify(n); fbSave("generalNotes", n); logAction("حذف ملاحظة"); refreshGeneralNotes();  }
+function addTodo(){ 
+    if(currentUser.role === 'viewer' || currentUser.role === 'viewer_plus') return; // Strict Check
+    let t=todoInput.value.trim(); if(!t)return; let l=safeJSON(store.todoList, []); l.push({text:t, date:new Date().toLocaleString("ar-EG")}); store.todoList = JSON.stringify(l); fbSave("todoList", l); todoInput.value=""; logAction("إضافة مهمة جديدة"); refreshTodoList();  
+}
+function refreshTodoList(){ 
+    let l=safeJSON(store.todoList, []); 
+    let rows=""; 
+    let canEdit = currentUser ? (currentUser.role === 'admin' || currentUser.role === 'employee') : false;
+    l.forEach((x,i)=>{ 
+        let btnHtml = canEdit ? `<button class="btn btn-primary" style="padding:5px 10px; font-size:12px;" onclick="completeTodo(${i})">تمت</button>` : '';
+        rows+=`<div class="todo-item"><div>${esc(x.text)}</div>${btnHtml}</div>`; 
+    }); 
+    todoBox.innerHTML=rows;
+}
+function completeTodo(i){ 
+    if(currentUser.role === 'viewer' || currentUser.role === 'viewer_plus') return; // Strict Check
+    let l=safeJSON(store.todoList, []); logAction(`إكمال مهمة: ${esc(l[i].text)}`); l.splice(i,1); store.todoList = JSON.stringify(l); fbSave("todoList", l); refreshTodoList();  
+}
+
+async function withdrawPartial(p){ 
+    if(currentUser.role !== 'admin') return notify("للأدمن فقط","error");
+    
+    let input = document.getElementById(p==='ahmad'?'withdrawAhmad':p==='mohamed'?'withdrawMohamed':'withdrawStore');
+    let walletSelect = document.getElementById(p==='ahmad'?'wWalletAhmad':p==='mohamed'?'wWalletMohamed':'wWalletStore');
+    
+    let amount = +input.value;
+    let walletName = walletSelect.value;
+
+    if(!amount) return notify("أدخل المبلغ","error");
+    if(!walletName) return notify("يرجى اختيار المحفظة","error");
+
+    let reason = await showPrompt("سبب السحب", "هذا الحقل إجباري", "أدخل سبب السحب...", '<i class="fas fa-money-bill-wave"></i>');
+    if(!reason) return notify("تم الإلغاء: السبب مطلوب","error");
+
+    let i = safeJSON(store.invest, {});
+    let w = safeJSON(store.wallets, {});
+    
+    let wallet = w[walletName];
+    let currency = wallet.cur;
+    let shareType = (currency === '$') ? 'd' : 's';
+
+    if(i[p][shareType] < amount) { notify(`رصيد الحصة (${currency}) غير كافي للسحب`,"error"); return; }
+    if(wallet.bal < amount) { notify(`رصيد المحفظة (${walletName}) غير كافي.`, "error"); return; }
+
+    let shareBefore = i[p][shareType];
+    let walletBefore = wallet.bal;
+
+    i[p][shareType] -= amount; 
+    w[walletName].bal -= amount; 
+
+    store.invest = JSON.stringify(i); fbSave("invest", i); 
+    store.wallets = JSON.stringify(w); fbSave("wallets", w);
+
+    logAction(`سحب أرباح من حصة ${p} عبر ${walletName}`, {
+        type: 'withdraw',
+        person: p,
+        amount: amount,
+        currency: currency,
+        walletName: walletName,
+        deductedFromWallet: amount,
+        reason: reason,
+        shareBefore: shareBefore,
+        shareAfter: i[p][shareType],
+        walletBefore: walletBefore,
+        walletAfter: w[walletName].bal
+    });
+
+    refreshInvestment(); refreshWallets(); input.value=""; 
+     notify("تم السحب بنجاح");
+}
+
+function addNewWallet(){ let n=newWalletName.value.trim(), c=newWalletCurrency.value, w=safeJSON(store.wallets, {}); if(!n||w[n]) return notify("خطأ بالاسم","error"); w[n]={bal:0, cur:c, active:true}; store.wallets = JSON.stringify(w); fbSave("wallets", w); loadWallets(); refreshWallets(); newWalletName.value=""; logAction(`إنشاء محفظة جديدة: ${n}`);  notify("تمت"); }
+function renameWallet(){ let o=renameWalletSelect.value, n=renameWalletInput.value.trim(), w=safeJSON(store.wallets, {}); if(!n||w[n]) return notify("خطأ","error"); w[n]=w[o]; delete w[o]; store.wallets = JSON.stringify(w); fbSave("wallets", w); let p=safeJSON(store.purchases, []); p.forEach(x=>{if(x.wallet===o)x.wallet=n}); store.purchases = JSON.stringify(p); fbSave("purchases", p); loadWallets(); refreshAll(); renameWalletInput.value=""; logAction(`تغيير اسم محفظة من ${o} إلى ${n}`);  notify("تم"); }
+
+function calculateTransfer() {
+    let amount = parseFloat(document.getElementById("tfAmount").value) || 0;
+    let fee = parseFloat(document.getElementById("tfFee").value) || 0;
+    let rate = parseFloat(document.getElementById("tfRate").value) || 1;
+    let net = amount - fee;
+    
+    let from = document.getElementById("tfFromWallet").value;
+    let to = document.getElementById("tfToWallet").value;
+    let w = safeJSON(store.wallets, {});
+    
+    let result = 0;
+    if(from && to && w[from] && w[to]) {
+        let fromCur = w[from].cur;
+        let toCur = w[to].cur;
+        
+        if(fromCur === toCur) {
+            result = net; 
+        } else if (fromCur === '$' && toCur === '₪') {
+            result = net * rate;
+        } else if (fromCur === '₪' && toCur === '$') {
+            result = net / rate;
+        }
+    }
+    
+    document.getElementById("tfResult").value = result.toFixed(2);
 }
 
 function executeTransfer() {
@@ -1050,528 +2286,519 @@ function executeTransfer() {
     let amount = parseFloat(document.getElementById("tfAmount").value);
     let fee = parseFloat(document.getElementById("tfFee").value) || 0;
     let rate = parseFloat(document.getElementById("tfRate").value) || 1;
-    let result = parseFloat(document.getElementById("tfResult").value);
+    let result = parseFloat(document.getElementById("tfResult").value); // Taking manual input if modified
 
     if(!amount || !from || !to) return notify("يرجى تعبئة البيانات", "error");
-    if(appData.wallets[from].bal < amount) return notify("الرصيد غير كافي", "error");
+    if(isNaN(result) || result < 0) return notify("قيمة الصافي غير صالحة", "error");
+    if(from === to) return notify("لا يمكن التحويل لنفس المحفظة", "error");
 
-    let updates = {};
-    updates[`wallets/${from}/bal`] = appData.wallets[from].bal - amount;
-    updates[`wallets/${to}/bal`] = appData.wallets[to].bal + result;
-    
-    let fromCur = appData.wallets[from].cur;
-    let toCur = appData.wallets[to].cur;
+    let w = safeJSON(store.wallets, {});
+    if(w[from].bal < amount) return notify("الرصيد غير كافي", "error");
 
+    let fromCur = w[from].cur;
+    let toCur = w[to].cur;
+
+    w[from].bal -= amount;
+    w[to].bal += result;
+
+    let invest = safeJSON(store.invest, {});
     if(fee > 0) {
-        let storePath = fromCur === '$' ? 'invest/store/d' : 'invest/store/s';
-        let currentStore = fromCur === '$' ? appData.invest.store.d : appData.invest.store.s;
-        updates[storePath] = currentStore - fee;
+        if(fromCur === '$') invest.store.d -= fee;
+        else invest.store.s -= fee;
     }
 
-    db.ref('megaStoreData').update(updates);
+    store.wallets = JSON.stringify(w); fbSave("wallets", w);
+    store.invest = JSON.stringify(invest); fbSave("invest", invest);
     
     logAction(`تحويل من ${from} إلى ${to}`, {
-        type: 'transfer', from: from, to: to, amount: amount, fee: fee, feeCur: fromCur,
-        rate: rate, result: result, netAmount: amount - fee, fromCur: fromCur, toCur: toCur
+        type: 'transfer',
+        from: from,
+        to: to,
+        amount: amount,
+        fee: fee,
+        feeCur: fromCur,
+        rate: rate,
+        result: result,
+        netAmount: amount - fee,
+        fromCur: fromCur,
+        toCur: toCur
     });
 
-    notify("تم التحويل");
+    refreshWallets(); refreshInvestment();  notify("تم التحويل");
     document.getElementById("tfAmount").value = "";
+    document.getElementById("tfFee").value = "0";
+    document.getElementById("tfResult").value = "";
 }
 
-// --- INVEST & PROFIT (CLOUD) ---
+async function setWallet(){ 
+    if(currentUser.role !== 'admin') return notify("للأدمن فقط", "error");
+    let reason = await showPrompt("سبب التعيين المباشر", "هذا الحقل إجباري", "أدخل سبب التعيين...", '<i class="fas fa-edit"></i>');
+    if(!reason) return;
+    let w=safeJSON(store.wallets, {}); 
+    let before = w[modWallet.value].bal;
+    w[modWallet.value].bal = +modAmount.value; 
+    store.wallets = JSON.stringify(w); fbSave("wallets", w); 
+    logAction(`تعيين رصيد محفظة ${modWallet.value}`, { type: 'manual', wallet: modWallet.value, reason: reason, before: before, after: w[modWallet.value].bal, diff: (+modAmount.value - before) });
+    refreshWallets();  notify("تم"); 
+}
+
 async function setProfitShare() {
+    if(currentUser.role !== 'admin') return notify("للأدمن فقط", "error");
     let person = document.getElementById("setSharePerson").value;
     let currency = document.getElementById("setShareCurrency").value;
     let amount = parseFloat(document.getElementById("setShareAmount").value);
-    
+
+    if(isNaN(amount)) return notify("أدخل الرصيد الجديد", "error");
     let reason = await showPrompt("سبب تعديل الحصة", "هذا الحقل إجباري", "أدخل السبب...", '<i class="fas fa-edit"></i>');
     if(!reason) return;
 
-    let before = appData.invest[person][currency];
-    dbUpdate(`invest/${person}`, { [currency]: amount });
+    let invest = safeJSON(store.invest, {});
+    let before = invest[person][currency];
+    invest[person][currency] = amount;
+    store.invest = JSON.stringify(invest); fbSave("invest", invest);
 
     logAction(`تعديل مباشر لحصة ${person}`, { type: 'manual_invest', person: person, currency: currency, reason: reason, before: before, after: amount });
-    notify("تم تحديث الحصة");
+    refreshInvestment();  notify("تم تحديث الحصة");
 }
 
-async function withdrawPartial(p){ 
-    let input = document.getElementById(p==='ahmad'?'withdrawAhmad':p==='mohamed'?'withdrawMohamed':'withdrawStore');
-    let walletSelect = document.getElementById(p==='ahmad'?'wWalletAhmad':p==='mohamed'?'wWalletMohamed':'wWalletStore');
-    let amount = +input.value;
-    let walletName = walletSelect.value;
-    
-    if(!amount || !walletName) return notify("بيانات ناقصة","error");
-    let reason = await showPrompt("سبب السحب", "هذا الحقل إجباري", "أدخل سبب السحب...", '<i class="fas fa-money-bill-wave"></i>');
-    if(!reason) return;
-
-    let wallet = appData.wallets[walletName];
-    let cur = wallet.cur;
-    let shareType = (cur === '$') ? 'd' : 's';
-    
-    if(appData.invest[p][shareType] < amount) return notify("رصيد الحصة غير كافي", "error");
-    if(wallet.bal < amount) return notify("رصيد المحفظة غير كافي", "error");
-
-    let updates = {};
-    updates[`invest/${p}/${shareType}`] = appData.invest[p][shareType] - amount;
-    updates[`wallets/${walletName}/bal`] = wallet.bal - amount;
-    
-    db.ref('megaStoreData').update(updates);
-
-    logAction(`سحب أرباح من حصة ${p}`, {
-        type: 'withdraw', person: p, amount: amount, currency: cur, walletName: walletName,
-        reason: reason, shareBefore: appData.invest[p][shareType], shareAfter: (appData.invest[p][shareType] - amount),
-        walletBefore: wallet.bal, walletAfter: (wallet.bal - amount)
-    });
-
-    input.value=""; notify("تم السحب بنجاح");
-}
-
-function saveProfitSettings(){
-    let a = +setAhmadProp.value, m = +setMohamedProp.value, s = +setStoreProp.value;
-    if(a + m + s !== 100){ notify("مجموع النسب يجب أن يساوي 100%","error"); return; }
-    dbSet('settings', {
-        ahmad: a, mohamed: m, store: s, 
-        deductCost: setDeductCost.checked, 
-        exchangeRate: +setExchangeRate.value,
-        logsVis: appData.settings.logsVis || 'all'
-    });
-    logAction("تعديل إعدادات توزيع الأرباح");
-    notify("تم الحفظ");
-}
-
-// --- PURCHASE (CLOUD) ---
-function addPurchase(){
-    if(currentUser.role === 'viewer' || currentUser.role === 'viewer_plus') return;
-    
-    let paid = parseFloat(paidAmount.value);
-    let cost = parseFloat(costAmount.value);
-    if(isNaN(paid) || isNaN(cost) || paid < 0 || cost < 0) return notify("أرقام غير صحيحة", "error");
-    
-    let stockFid = sub.value;
-    if(!stockFid) return notify("اختر اشتراك", "error");
-    let stItem = appData.stock.find(x => x._fid === stockFid);
-    if(!stItem || stItem.status !== 'active') return notify("الاشتراك غير متاح", "error");
-
-    let paidCur=paidCurrency.value, costCur=costCurrency.value;
-    let from=fromWallet.value, duration = +subDuration.value;
-    
-    if(appData.wallets[from].bal < cost && appData.wallets[from].cur == costCur) return notify("رصيد المحفظة غير كافي", "error");
-
-    // Show Confirmation Dialog (Client Side Logic, then Push)
-    let cleanName = stItem.service + ((stItem.totalProfiles || 1) > 1 ? " Shared" : "");
-    document.getElementById("purchaseConfirmBody").innerHTML = `
-        <div style="display:grid; gap:8px;">
-            <div><b>الخدمة:</b> ${esc(cleanName)}</div>
-            <div><b>العميل:</b> ${esc(customer.value)}</div>
-            <div style="color:var(--success)">مدفوع: ${paid}${paidCur}</div>
-            <div style="color:var(--danger)">تكلفة: ${cost}${costCur}</div>
-        </div>`;
-    document.getElementById("purchaseConfirmModal").style.display = "flex";
-    document.getElementById("purchaseConfirmOkBtn").onclick = () => {
-        document.getElementById("purchaseConfirmModal").style.display = "none";
-        _commitPurchase(paid, cost, paidCur, costCur, from, duration, stItem, cleanName);
-    };
-}
-
-function _commitPurchase(paid, cost, paidCur, costCur, from, duration, stItem, cleanName) {
-    let settings = appData.settings;
-    let rate = settings.exchangeRate || 1;
-    
-    // 1. Calculate Profit Distribution
-    let updates = {};
-    
-    // Deduct Cost
-    updates[`wallets/${from}/bal`] = appData.wallets[from].bal - cost;
-    let storeCostDed = (costCur === '$') ? appData.invest.store.d : appData.invest.store.s;
-    if(costCur === '$') updates[`invest/store/d`] = Math.max(0, appData.invest.store.d - cost);
-    else updates[`invest/store/s`] = Math.max(0, appData.invest.store.s - cost);
-
-    // Add Income
-    updates[`wallets/${wallet.value}/bal`] = appData.wallets[wallet.value].bal + paid;
-
-    // Distribute Profit
-    let profitBase = paid; // Simplified for brevity, apply your logic here
-    if(settings.deductCost) {
-       let costConv = (paidCur === costCur) ? cost : (paidCur==='$' ? cost/rate : cost*rate);
-       profitBase = paid - costConv;
-    }
-    let aP = +(profitBase * (settings.ahmad/100)).toFixed(2);
-    let mP = +(profitBase * (settings.mohamed/100)).toFixed(2);
-    let sP = +(profitBase * (settings.store/100)).toFixed(2);
-    
-    let pKey = (paidCur === '$') ? 'd' : 's';
-    updates[`invest/ahmad/${pKey}`] = appData.invest.ahmad[pKey] + aP;
-    updates[`invest/mohamed/${pKey}`] = appData.invest.mohamed[pKey] + mP;
-    updates[`invest/store/${pKey}`] = appData.invest.store[pKey] + sP;
-    if(settings.deductCost) {
-         // Return capital to store
-         // This logic depends on exact accounting preference.
-         // Assuming simple profit split added to existing balances.
-    }
-
-    // 2. Update Stock Status
-    let newSold = (stItem.soldProfiles || 0) + 1;
-    updates[`stock/${stItem._fid}/soldProfiles`] = newSold;
-    if(!stItem.buyers) stItem.buyers = [];
-    stItem.buyers.push(customer.value);
-    updates[`stock/${stItem._fid}/buyers`] = stItem.buyers;
-    
-    if(newSold >= (stItem.totalProfiles || 1)) {
-        updates[`stock/${stItem._fid}/status`] = 'sold';
-        updates[`stock/${stItem._fid}/soldDate`] = new Date().toLocaleDateString('ar-EG');
-    }
-
-    // 3. Record Purchase
-    let d = new Date(), exp = new Date(d);
-    exp.setMonth(exp.getMonth() + duration);
-    let newPurchaseKey = db.ref('megaStoreData/purchases').push().key;
-    updates[`purchases/${newPurchaseKey}`] = {
-        date: d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(),
-        customer: customer.value||"عميل",
-        phone: customerPhone.value||"-",
-        sub: cleanName,
-        stockId: stItem._fid,
-        duration: duration,
-        paid: paid+paidCur,
-        cost: cost+costCur,
-        wallet: wallet.value,
-        fromWallet: from,
-        expiry: exp.getTime(),
-        investSnapshot: appData.invest // approximate snapshot
-    };
-
-    // Execute Atomic Update
-    db.ref('megaStoreData').update(updates);
-    
-    logAction(`إضافة عملية شراء: ${cleanName}`, { type: 'purchase', customer: customer.value, sub: cleanName, cost: cost+costCur, paid: paid+paidCur });
-    notify("تمت العملية بنجاح");
-    
-    paidAmount.value=""; costAmount.value=""; customer.value="";
-}
-
-async function undoLastPurchase() {
-    let lastP = appData.purchases[appData.purchases.length - 1]; // This is risky in multi-user, but asked for simplicity
-    if(!lastP) return notify("لا توجد عمليات", "error");
-    
-    let ok = await showConfirm("تراجع", "هل أنت متأكد من التراجع عن آخر عملية؟", "نعم", "لا");
+async function deleteWallet(){ 
+    if(currentUser.role !== 'admin') return notify("للأدمن فقط", "error"); 
+    let ok = await showConfirm("حذف المحفظة", `هل تريد حذف محفظة "${modWallet.value}" نهائياً؟`, "حذف", "إلغاء", '<i class="fas fa-trash-alt"></i>');
     if(!ok) return;
+    let w=safeJSON(store.wallets, {}); delete w[modWallet.value]; store.wallets = JSON.stringify(w); fbSave("wallets", w); logAction(`حذف محفظة ${modWallet.value}`); loadWallets(); refreshWallets();  notify("تم الحذف"); 
+}
+function exportData(){ if(currentUser.role === 'viewer' || currentUser.role === 'viewer_plus') return; let exportObj = {}; ["users","wallets","purchases","invest","settings","generalNotes","todoList","activityLog","stock","services"].forEach(k=>{ if(store[k]) exportObj[k]=store[k]; }); let a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([JSON.stringify(exportObj)],{type:"application/json"})); a.download=`MegaBackup_${new Date().toLocaleDateString()}.json`; a.click(); logAction("تصدير نسخة احتياطية"); }
+function importData(){ 
+    if(currentUser.role !== 'admin') return notify("للأدمن فقط","error");
+    let f=importFile.files[0], r=new FileReader(); 
+    r.onload=async (e)=>{ try{ let d=JSON.parse(e.target.result); const KEYS=["users","wallets","purchases","invest","settings","generalNotes","todoList","activityLog","stock","services"]; let updateObj={}; KEYS.forEach(k=>{ if(d[k]){ store[k]=typeof d[k]==='string'?d[k]:JSON.stringify(d[k]); updateObj[k]=safeJSON(store[k],{}); } }); await fbDocRef.set(updateObj, {merge:true}); notify("تم الاستعادة بنجاح"); logAction("استيراد بيانات من نسخة احتياطية"); location.reload(); }catch(err){ notify("ملف تالف","error"); } }; 
+    if(f) r.readAsText(f); else notify("اختر ملف","error"); 
+}
 
-    // Reverse Money (Simple Reversal)
-    let updates = {};
-    let wFrom = lastP.fromWallet; let wTo = lastP.wallet;
-    let costVal = parseFloat(lastP.cost); let paidVal = parseFloat(lastP.paid);
+async function undoLastPurchase(){ 
+    if(currentUser.role === 'viewer' || currentUser.role === 'viewer_plus') return;
+    let purchases = safeJSON(store.purchases, []);
+    if(purchases.length === 0) return notify("لا توجد عمليات للتراجع عنها", "error");
+    let ok = await showConfirm("تراجع عن آخر عملية", "سيتم استعادة جميع الأرصدة والحصص. هل تريد المتابعة؟", "نعم، تراجع", "لا، إلغاء", '<i class="fas fa-undo"></i>');
+    if(!ok) return;
+    let lastP = purchases.pop();
+    let wallets = safeJSON(store.wallets, {});
+    if(lastP.fromWallet && wallets[lastP.fromWallet]) { wallets[lastP.fromWallet].bal += parseFloat(lastP.cost); }
+    if(lastP.wallet && wallets[lastP.wallet]) { wallets[lastP.wallet].bal -= parseFloat(lastP.paid); }
+    store.wallets = JSON.stringify(wallets); fbSave("wallets", wallets);
+    store.purchases = JSON.stringify(purchases); fbSave("purchases", purchases);
+    if(lastP.investSnapshot) { store.invest = JSON.stringify(lastP.investSnapshot); fbSave("invest", lastP.investSnapshot); }
     
-    updates[`wallets/${wFrom}/bal`] = appData.wallets[wFrom].bal + costVal;
-    updates[`wallets/${wTo}/bal`] = appData.wallets[wTo].bal - paidVal;
-    
-    // Reverse Stock
+    // Reverse Stock if attached
     if(lastP.stockId) {
-        let stItem = appData.stock.find(x => x._fid === lastP.stockId);
-        if(stItem) {
-            updates[`stock/${lastP.stockId}/soldProfiles`] = Math.max(0, (stItem.soldProfiles||0) - 1);
-            updates[`stock/${lastP.stockId}/status`] = 'active'; // Re-activate
+        let stockList = safeJSON(store.stock, []);
+        let sItem = stockList.find(x => x.id === lastP.stockId);
+        if(sItem) {
+            sItem.soldProfiles = Math.max(0, (sItem.soldProfiles || 0) - 1);
+            if(sItem.buyers && sItem.buyers.length > 0) sItem.buyers.pop(); 
+            if(sItem.status === 'sold') {
+                sItem.status = 'active';
+                delete sItem.soldDate;
+            }
+            store.stock = JSON.stringify(stockList); fbSave("stock", stockList);
         }
     }
     
-    updates[`purchases/${lastP._fid}`] = null; // Delete purchase
+    logAction("تراجع عن عملية شراء", { type: 'undo', data: lastP, refunded: lastP.cost, deducted: lastP.paid });
     
-    db.ref('megaStoreData').update(updates);
-    logAction("تراجع عن عملية شراء");
-    notify("تم التراجع");
+    currentPage.history = 1;
+    loadPurchaseStock();
+    refreshAll();  notify("تم التراجع"); 
 }
 
-// --- STOCK & SERVICES (CLOUD) ---
+async function clearHistory(){ 
+    if(currentUser.role !== 'admin') return notify("للأدمن فقط","error"); 
+    let res = await showConfirm("مسح سجل العمليات", "سيتم حذف العمليات المالية المسجلة نهائياً.", "مسح الكل", "إلغاء", '<i class="fas fa-trash-alt"></i>', "مسح أقدم صفحة");
+    if(!res) return;
+    
+    let purchases = safeJSON(store.purchases, []);
+    if(res === 'third') {
+        if(purchases.length > ITEMS_PER_PAGE) purchases.splice(0, ITEMS_PER_PAGE); 
+        else purchases = [];
+        store.purchases = JSON.stringify(purchases); fbSave("purchases", purchases);
+        logAction("قام الأدمن بمسح أقدم 50 عملية مالية لتوفير المساحة");
+    } else {
+        store.purchases = "[]"; fbSave("purchases", []); 
+        logAction("مسح سجل العمليات بالكامل"); 
+    }
+    
+    currentPage.history = 1;
+    refreshHistory(); 
+     
+    notify("تم المسح بنجاح");
+}
+
+function closeEditUserModal(e) { if(e === 'force' || e.target.id === 'editUserModal') document.getElementById("editUserModal").classList.add("hidden"); }
+
+function openEditUserModal(index) {
+    let users = safeJSON(store.users, []), u = users[index];
+    document.getElementById("editUserIndex").value = index;
+    document.getElementById("editUserName").value = u.username;
+    document.getElementById("editUserPassInput").value = "";
+    document.getElementById("editUserRoleSelect").value = u.role;
+    document.getElementById("editUserModal").classList.remove("hidden");
+}
+
+async function saveUserEdit() {
+    let index = +document.getElementById("editUserIndex").value;
+    let newPass = document.getElementById("editUserPassInput").value.trim();
+    let newRole = document.getElementById("editUserRoleSelect").value;
+    let users = safeJSON(store.users, []);
+    if(newPass) users[index].password = newPass;
+    if(users[index].username === currentUser.username && newRole !== 'admin') {
+        let ok = await showConfirm("تغيير صلاحيتك", "ستقلل صلاحيتك من أدمن. هل أنت متأكد؟", "نعم", "إلغاء", '<i class="fas fa-exclamation-triangle"></i>');
+        if(!ok) return;
+    }
+    users[index].role = newRole;
+    store.users = JSON.stringify(users); fbSave("users", users);
+    logAction(`تعديل بيانات المستخدم: ${users[index].username}`);
+    document.getElementById("editUserModal").classList.add("hidden");
+    renderUsersTable();  notify("تم تحديث بيانات المستخدم");
+}
+
+function closeStockModal(e) { if(e === 'force' || e.target.id === 'stockModal') document.getElementById("stockModal").classList.add("hidden"); }
+
 function openAddStockModal() {
-    document.getElementById("stockModalTitle").innerHTML = '<i class="fas fa-plus-circle"></i> إضافة اشتراك للمخزون';
-    document.getElementById("stockKey").value = "";
-    document.getElementById("stockModal").classList.remove("hidden");
     loadServices();
+    document.getElementById("stockModalTitle").innerHTML = '<i class="fas fa-plus-circle"></i> إضافة اشتراك للمخزون';
+    document.getElementById("stockIndex").value = "-1";
+    document.getElementById("stService").value = "";
+    document.getElementById("stProfiles").value = "1";
+    document.getElementById("stVendor").value = "";
+    ["stEmail","stPass","stNotes"].forEach(id => document.getElementById(id).value = "");
+    document.getElementById("stDuration").value = "1";
+    
+    let btnSave = document.querySelector("#stockModal .btn-primary");
+    let inputs = document.querySelectorAll("#stockModal input, #stockModal select, #stockModal textarea");
+    btnSave.classList.remove("hidden");
+    inputs.forEach(inp => inp.disabled = false);
+
+    document.getElementById("stockModal").classList.remove("hidden");
 }
 
 function saveStock() {
-    let key = document.getElementById("stockKey").value;
+    let index = +document.getElementById("stockIndex").value;
+    let stService = document.getElementById("stService").value;
+    let stProfiles = parseInt(document.getElementById("stProfiles").value) || 1;
+    if(stProfiles < 1) stProfiles = 1;
+    
+    if(!stService) return notify("يرجى اختيار الخدمة", "error");
+    
+    let baseName = stService + (stProfiles > 1 ? " Shared" : "");
+    let stock = safeJSON(store.stock, []);
+    
+    let activeStock = stock.filter(x => x.status === 'active' && x.id !== (index === -1 ? null : stock[index].id));
+    let finalName = baseName;
+    let counter = 2;
+    while(activeStock.some(x => (x.displayName || x.service) === finalName)) {
+        finalName = baseName + counter;
+        counter++;
+    }
+
     let s = {
-        service: stService.value,
-        totalProfiles: +stProfiles.value,
-        vendor: stVendor.value,
-        duration: stDuration.value,
-        email: stEmail.value,
-        pass: stPass.value,
-        notes: stNotes.value,
-        status: 'active',
-        timestamp: firebase.database.ServerValue.TIMESTAMP
+        id: index === -1 ? Date.now() + '_' + Math.random().toString(36).substr(2,5) : stock[index].id,
+        service: stService,
+        displayName: finalName,
+        totalProfiles: stProfiles,
+        soldProfiles: index === -1 ? 0 : (stock[index].soldProfiles || 0),
+        vendor: document.getElementById("stVendor").value,
+        duration: document.getElementById("stDuration").value,
+        email: document.getElementById("stEmail").value.trim(),
+        pass: document.getElementById("stPass").value,
+        notes: document.getElementById("stNotes").value,
+        buyers: index === -1 ? [] : (stock[index].buyers || []),
+        status: index === -1 ? 'active' : (stock[index].status || 'active'),
+        date: new Date().toLocaleDateString('ar-EG'),
+        timestamp: new Date().getTime()
     };
     
-    if(key) dbUpdate(`stock/${key}`, s);
-    else dbPush('stock', s);
+    if(index !== -1) {
+        let old = stock[index];
+        if(old.soldDate) s.soldDate = old.soldDate;
+    }
     
+    if(index === -1) { stock.unshift(s); logAction(`إضافة اشتراك للمخزون: ${s.displayName}`); }
+    else { stock[index] = s; logAction(`تعديل اشتراك في المخزون: ${s.displayName}`); }
+    
+    store.stock = JSON.stringify(stock); fbSave("stock", stock);
     document.getElementById("stockModal").classList.add("hidden");
-    logAction("تحديث المخزون");
-    notify("تم الحفظ");
+    currentPage.stock = 1;
+    loadPurchaseStock();
+    refreshStock();  notify("تم الحفظ بنجاح");
 }
 
-function editStock(index) {
-    // Note: 'index' here comes from the filtered array in the table render. 
-    // We need to pass _fid in HTML generation.
-    // Fixed in render function below.
+function switchStockTab(tab, btn) {
+    currentStockTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    if(tab === 'sold' && currentUser.role === 'admin') {
+        document.getElementById('btnDeleteAllSold').classList.remove('hidden');
+    } else {
+        document.getElementById('btnDeleteAllSold').classList.add('hidden');
+    }
+    
+    currentPage.stock = 1;
+    refreshStock();
 }
 
-function openEditStockByFid(fid) {
-    let item = appData.stock.find(x => x._fid === fid);
-    document.getElementById("stockKey").value = fid;
-    stService.value = item.service;
-    stProfiles.value = item.totalProfiles;
-    stVendor.value = item.vendor;
-    stDuration.value = item.duration;
-    stEmail.value = item.email;
-    stPass.value = item.pass;
-    stNotes.value = item.notes;
+async function deleteAllSoldStock() {
+    let res = await showConfirm("حذف المباع", "سيتم حذف كافة الاشتراكات المباعة نهائياً من الأرشيف.", "حذف الكل", "إلغاء", '<i class="fas fa-trash-alt"></i>', "مسح أقدم صفحة مباعة");
+    if(!res) return;
+    
+    let stock = safeJSON(store.stock, []);
+    if(res === 'third') {
+        let soldItems = stock.filter(s => s.status === 'sold');
+        soldItems.sort((a, b) => a.timestamp - b.timestamp); 
+        let toRemove = soldItems.slice(0, ITEMS_PER_PAGE).map(s => s.id);
+        stock = stock.filter(s => !toRemove.includes(s.id));
+        logAction("قام الأدمن بحذف أقدم 50 اشتراك مباع");
+    } else {
+        stock = stock.filter(s => s.status !== 'sold');
+        logAction("قام الأدمن بحذف كافة الاشتراكات المباعة");
+    }
+    
+    store.stock = JSON.stringify(stock); fbSave("stock", stock);
+    currentPage.stock = 1;
+    refreshStock();  notify("تم المسح بنجاح");
+}
+
+function refreshStock() {
+    let stock = safeJSON(store.stock, []);
+    let tbody = document.getElementById("stockBody"); 
+    let thead = document.getElementById("stockHead");
+    if(!tbody || !thead) return;
+
+    let isAdmin = currentUser && currentUser.role === 'admin';
+    let canSell = currentUser && (currentUser.role === 'admin' || currentUser.role === 'employee');
+
+    let searchTerm = document.getElementById("stockSearch").value.toLowerCase();
+    
+    let filtered = stock.filter(item => {
+        let matchesTab = (currentStockTab === 'active') ? (item.status !== 'sold') : (item.status === 'sold');
+        let matchesSearch = (item.displayName||item.service||'').toLowerCase().includes(searchTerm) || 
+                            (item.email||'').toLowerCase().includes(searchTerm) ||
+                            (item.vendor||'').toLowerCase().includes(searchTerm) ||
+                            (item.buyers && item.buyers.some(b => b.toLowerCase().includes(searchTerm)));
+        return matchesTab && matchesSearch;
+    });
+
+    filtered.sort((a, b) => b.timestamp - a.timestamp);
+
+    renderPagination(filtered.length, 'stock', refreshStock, 'stockPagination');
+    let paginated = filtered.slice((currentPage.stock - 1) * ITEMS_PER_PAGE, currentPage.stock * ITEMS_PER_PAGE);
+
+    let headerHTML = "";
+    if(currentStockTab === 'active') {
+        headerHTML = `<tr>
+            <th>الخدمة</th>
+            <th>الإيميل</th>
+            <th>البائع</th>
+            <th>البروفايلات</th>
+            <th>المتبقي</th>
+            <th>التفاصيل</th>
+            ${canSell ? '<th>بيع</th>' : ''}
+        </tr>`;
+    } else {
+        let delTh = isAdmin ? '<th>حذف</th>' : '';
+        headerHTML = `<tr>
+            <th>الخدمة</th>
+            <th>الإيميل</th>
+            <th>البروفايلات</th>
+            <th>تاريخ البيع</th>
+            <th>التفاصيل</th>
+            ${delTh}
+        </tr>`;
+    }
+    thead.innerHTML = headerHTML;
+
+    let rows = "";
+    paginated.forEach((item) => {
+        let realIndex = stock.findIndex(x => x.id === item.id);
+        
+        let purchaseDate = new Date(item.timestamp);
+        let expiryDate = new Date(purchaseDate);
+        expiryDate.setMonth(expiryDate.getMonth() + parseInt(item.duration));
+        let daysLeft = Math.max(0, Math.ceil((expiryDate - new Date()) / (1000 * 60 * 60 * 24)));
+        
+        let profStr = `${item.soldProfiles || 0}/${item.totalProfiles || 1}`;
+
+        if(currentStockTab === 'active') {
+            let detailsBtn = `<button class="btn btn-primary" style="padding:5px 10px" onclick="editStock(${realIndex})"><i class="fas fa-eye"></i></button>`;
+            let sellBtn = canSell ? `<td><button class="btn" style="padding:5px 10px; background:var(--success); color:#fff" onclick="sellStock(${realIndex})"><i class="fas fa-check"></i> بيع</button></td>` : '';
+            rows += `<tr>
+                <td><span class="badge badge-info">${esc(item.displayName || item.service)}</span></td>
+                <td class="wide-col" title="${esc(item.email)}">${esc(item.email)}</td>
+                <td>${esc(item.vendor) || '-'}</td>
+                <td class="eng-num" style="font-weight:bold;">${profStr}</td>
+                <td class="eng-num"><span class="badge ${daysLeft===0?'badge-danger':'badge-warning'}">${daysLeft} يوم</span></td>
+                <td>${detailsBtn}</td>
+                ${sellBtn}
+            </tr>`;
+        } else {
+            let viewBtn = `<button class="btn btn-primary" style="padding:5px 10px" onclick="viewSoldDetails(${realIndex})"><i class="fas fa-eye"></i></button>`;
+            let delCell = isAdmin ? `<td><button class="btn btn-danger" style="padding:5px 10px" onclick="deleteSoldStock(${realIndex})"><i class="fas fa-trash-alt"></i></button></td>` : '';
+            
+            rows += `<tr>
+                <td><span class="badge badge-info">${esc(item.displayName || item.service)}</span></td>
+                <td class="wide-col" title="${esc(item.email)}">${esc(item.email)}</td>
+                <td class="eng-num" style="font-weight:bold;">${profStr}</td>
+                <td class="eng-num">${item.soldDate || '-'}</td>
+                <td>${viewBtn}</td>
+                ${delCell}
+            </tr>`;
+        }
+    });
+    let colSpan = currentStockTab === 'active' ? (canSell ? 7 : 6) : (isAdmin ? 6 : 5);
+    tbody.innerHTML = rows || `<tr><td colspan='${colSpan}' style='text-align:center; padding:20px; color:var(--text-muted)'>لا توجد بيانات</td></tr>`;
+}
+
+function filterStock() {
+    refreshStock();
+}
+
+function editStock(i) {
+    let stock = safeJSON(store.stock, []), item = stock[i];
+    let isAdmin = currentUser.role === 'admin';
+
+    loadServices();
+    document.getElementById("stockModalTitle").innerHTML = isAdmin ? '<i class="fas fa-edit"></i> تعديل المخزون' : '<i class="fas fa-eye"></i> تفاصيل المخزون';
+    document.getElementById("stockIndex").value = i;
+    
+    let sel = document.getElementById("stService");
+    sel.value = item.service;
+    if(sel.value !== item.service) { 
+         let o = document.createElement("option"); o.value=item.service; o.text=item.service; sel.appendChild(o);
+         sel.value = item.service;
+    }
+    
+    document.getElementById("stProfiles").value = item.totalProfiles || 1;
+    document.getElementById("stVendor").value = item.vendor || "";
+    document.getElementById("stDuration").value = item.duration;
+    document.getElementById("stEmail").value = item.email;
+    document.getElementById("stPass").value = item.pass;
+    document.getElementById("stNotes").value = item.notes;
+
+    let btnSave = document.querySelector("#stockModal .btn-primary");
+    let inputs = document.querySelectorAll("#stockModal input, #stockModal select, #stockModal textarea");
+    
+    if (!isAdmin) {
+        btnSave.classList.add("hidden");
+        inputs.forEach(inp => inp.disabled = true);
+    } else {
+        btnSave.classList.remove("hidden");
+        inputs.forEach(inp => inp.disabled = false);
+    }
+
     document.getElementById("stockModal").classList.remove("hidden");
 }
 
-async function deleteSoldStock(fid) {
-    let ok = await showConfirm("حذف", "حذف نهائي؟", "حذف", "إلغاء");
-    if(ok) dbRemove(`stock/${fid}`);
-}
-
-async function sellStock(fid) {
-    let item = appData.stock.find(x => x._fid === fid);
-    let customerNum = await showPrompt("بيع يدوي", "أدخل اسم العميل", "اختياري");
-    if(customerNum === null) return;
+function viewSoldDetails(i) {
+    let stock = safeJSON(store.stock, []), item = stock[i];
     
-    dbUpdate(`stock/${fid}`, {
-        status: 'sold',
-        soldDate: new Date().toLocaleDateString('ar-EG'),
-        buyers: [customerNum || "Manual"]
-    });
-    notify("تم نقل الاشتراك للمباع");
-}
-
-function addService() {
-    let val = newServiceName.value.trim();
-    if(val) { dbPush('services', val); newServiceName.value=""; }
-}
-function deleteService(fid) {
-    dbRemove(`services/${fid}`);
-}
-
-// --- NOTES & TODO (CLOUD) ---
-function addGeneralNote() {
-    let t = gnText.value.trim();
-    if(t) { dbPush('generalNotes', {text:t, date:new Date().toLocaleString("ar-EG")}); gnText.value=""; }
-}
-function deleteNote(fid) { dbRemove(`generalNotes/${fid}`); }
-
-function addTodo() {
-    let t = todoInput.value.trim();
-    if(t) { dbPush('todoList', {text:t, date:new Date().toLocaleString("ar-EG")}); todoInput.value=""; }
-}
-function completeTodo(fid) { dbRemove(`todoList/${fid}`); }
-
-async function clearLogs() {
-    let ok = await showConfirm("مسح السجل", "هل أنت متأكد؟", "مسح", "إلغاء");
-    if(ok) dbSet('activityLog', null);
-}
-
-// --- UI RENDERING (Based on appData) ---
-
-function refreshAll() {
-    refreshWallets();
-    // Refresh Stats
-    let todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
-    let salesToday = appData.purchases.filter(p => p.date && p.date.includes(todayStr)).length;
-    statSales.textContent = salesToday;
+    let body = document.getElementById("modalBody");
+    body.innerHTML = "";
     
-    // Refresh Pages
-    if(!document.getElementById("stock").classList.contains("hidden")) refreshStock();
-    if(!document.getElementById("history").classList.contains("hidden")) refreshHistory();
-    if(!document.getElementById("expiring").classList.contains("hidden")) refreshExpiring();
-    if(!document.getElementById("investment").classList.contains("hidden")) refreshInvestment();
-    if(!document.getElementById("generalNotes").classList.contains("hidden")) refreshGeneralNotes();
-    if(!document.getElementById("modify").classList.contains("hidden")) { refreshTodoList(); renderServicesSettings(); }
-    if(!document.getElementById("logs").classList.contains("hidden")) refreshLogs();
-    if(!document.getElementById("security").classList.contains("hidden")) renderUsersTable();
-}
-
-// ... (Rendering logic mostly remains same but iterating appData instead of localStorage)
-// ... (Crucially: Use _fid instead of index for actions)
-
-function refreshStock() {
-    let tbody = document.getElementById("stockBody");
-    tbody.innerHTML = "";
+    body.innerHTML += row("الخدمة", esc(item.displayName || item.service));
+    body.innerHTML += row("الإيميل", esc(item.email));
+    body.innerHTML += row("كلمة المرور", esc(item.pass));
+    body.innerHTML += row("البائع", esc(item.vendor) || "-");
+    body.innerHTML += row("البروفايلات", `${item.soldProfiles || 0} / ${item.totalProfiles || 1}`);
+    body.innerHTML += `<hr style="margin:10px 0; border:0; border-top:1px dashed var(--border-color)">`;
+    body.innerHTML += row("تاريخ البيع", item.soldDate);
     
-    let filtered = appData.stock.filter(item => {
-        let isSold = (item.status === 'sold');
-        if(currentStockTab === 'active' && isSold) return false;
-        if(currentStockTab === 'sold' && !isSold) return false;
-        // Search logic...
-        return true; 
-    });
+    let buyersHtml = "";
+    if(item.buyers && item.buyers.length > 0) {
+        buyersHtml = item.buyers.map((b, idx) => `<div style="padding:8px 0; border-bottom:1px solid var(--border-color);">${idx+1}. ${esc(b)}</div>`).join('');
+    } else {
+        buyersHtml = "مباشر (يدوي)";
+    }
     
-    // Pagination logic...
-    // Render loop:
-    let rows = "";
-    filtered.forEach(item => {
-        let btnAction = currentStockTab === 'active' 
-            ? `<button class="btn btn-primary" onclick="openEditStockByFid('${item._fid}')"><i class="fas fa-edit"></i></button> 
-               <button class="btn btn-success" onclick="sellStock('${item._fid}')"><i class="fas fa-check"></i></button>`
-            : `<button class="btn btn-danger" onclick="deleteSoldStock('${item._fid}')"><i class="fas fa-trash"></i></button>`;
-            
-        rows += `<tr>
-            <td>${esc(item.service)}</td>
-            <td>${esc(item.email)}</td>
-            <td>${esc(item.vendor)}</td>
-            <td>${item.soldProfiles||0}/${item.totalProfiles}</td>
-            <td>-</td>
-            <td>${btnAction}</td>
-        </tr>`;
-    });
-    tbody.innerHTML = rows;
-}
-
-function refreshHistory() {
-    let tbody = document.getElementById("historyBody");
-    let rows = "";
-    appData.purchases.slice().reverse().forEach(p => {
-        rows += `<tr>
-            <td>${p.date}</td><td>${esc(p.customer)}</td><td>${esc(p.phone)}</td>
-            <td>${esc(p.sub)}</td><td>${p.duration}</td>
-            <td style="color:var(--success)">${p.paid}</td>
-            <td style="color:var(--danger)">${p.cost}</td>
-            <td>${p.wallet}</td>
-        </tr>`;
-    });
-    tbody.innerHTML = rows;
-}
-
-function refreshWallets() {
-    let list = document.getElementById("walletList");
-    let rows = "";
-    let totalD=0, totalS=0;
-    Object.keys(appData.wallets).forEach(k => {
-        let w = appData.wallets[k];
-        rows += `<tr><td>${k}</td><td>${w.cur}</td><td>${fix(w.bal)}</td><td>Active</td></tr>`;
-        if(w.cur==='$') totalD+=w.bal; else totalS+=w.bal;
-    });
-    list.innerHTML = rows;
-    statDollar.innerText = fix(totalD) + " $";
-    statShekel.innerText = fix(totalS) + " ₪";
-    
-    // Refresh Selects
-    let selects = [wallet, modWallet, fromWallet, renameWalletSelect, tfFromWallet, tfToWallet, wWalletAhmad, wWalletMohamed, wWalletStore];
-    selects.forEach(s => {
-        if(!s) return;
-        s.innerHTML = '<option value="">اختر...</option>';
-        Object.keys(appData.wallets).forEach(k => {
-             let op = document.createElement("option"); op.value=k; op.text=k; s.appendChild(op);
-        });
-    });
-}
-
-function refreshInvestment() {
-    let i = appData.invest;
-    investBox.innerHTML=`
-    <div class="stat-card" style="border-right:5px solid #10b981; flex-direction:column; align-items:flex-start">
-        <div style="font-size:14px; color:var(--text-muted)">حصة أحمد</div>
-        <div style="font-size:20px; font-weight:800">${fix(i.ahmad.d)}$ | ${fix(i.ahmad.s)}₪</div>
-    </div>
-    <div class="stat-card" style="border-right:5px solid #f59e0b; flex-direction:column; align-items:flex-start">
-        <div style="font-size:14px; color:var(--text-muted)">حصة محمد</div>
-        <div style="font-size:20px; font-weight:800">${fix(i.mohamed.d)}$ | ${fix(i.mohamed.s)}₪</div>
-    </div>
-    <div class="stat-card" style="border-right:5px solid #6366f1; flex-direction:column; align-items:flex-start">
-        <div style="font-size:14px; color:var(--text-muted)">رأس مال المتجر</div>
-        <div style="font-size:20px; font-weight:800">${fix(i.store.d)}$ | ${fix(i.store.s)}₪</div>
+    body.innerHTML += `<div class="detail-row" style="flex-direction:column; align-items:flex-start;">
+        <span class="detail-label" style="margin-bottom:8px;">قائمة العملاء (المشترين):</span>
+        <div style="background:var(--bg-input); width:100%; padding:10px; border-radius:8px; font-weight:bold; color:var(--primary);">${buyersHtml}</div>
     </div>`;
+
+    body.innerHTML += `<div style="margin-top:10px; background:var(--bg-input); padding:10px; border-radius:8px; font-size:13px;"><b>ملاحظات:</b><br>${esc(item.notes)||'لا يوجد'}</div>`;
+    
+    document.getElementById("detailsModal").classList.remove("hidden");
 }
 
-function refreshGeneralNotes() {
-    let box = document.getElementById("generalNotesBox");
-    let h = "";
-    appData.generalNotes.forEach(n => {
-        h += `<div class="todo-item">
-            <div><small>${n.date}</small><div>${esc(n.text)}</div></div>
-            <i class="fas fa-trash-alt" onclick="deleteNote('${n._fid}')" style="cursor:pointer; color:red"></i>
-        </div>`;
-    });
-    box.innerHTML = h;
+async function deleteSoldStock(i) {
+    let ok = await showConfirm("حذف نهائي", "هل أنت متأكد من حذف هذا السجل من الأرشيف؟ لا يمكن التراجع.", "حذف", "إلغاء", '<i class="fas fa-trash-alt"></i>');
+    if(!ok) return;
+    
+    let stock = safeJSON(store.stock, []);
+    stock.splice(i, 1);
+    store.stock = JSON.stringify(stock); fbSave("stock", stock);
+    logAction("حذف سجل مباع من المخزون");
+    refreshStock();  notify("تم الحذف");
 }
 
-function refreshTodoList() {
-    let box = document.getElementById("todoBox");
-    let h = "";
-    appData.todoList.forEach(t => {
-        h += `<div class="todo-item"><div>${esc(t.text)}</div><button class="btn btn-primary" onclick="completeTodo('${t._fid}')">تمت</button></div>`;
-    });
-    box.innerHTML = h;
+async function sellStock(i) {
+    let stock = safeJSON(store.stock, []);
+    let item = stock[i];
+    
+    let customerNum = await showPrompt("إتمام البيع يدوياً", `تسجيل بيع لاشتراك: ${esc(item.displayName || item.service)}`, "أدخل اسم/رقم العميل (اختياري)", '<i class="fas fa-shopping-cart"></i>');
+    if (customerNum === null) return; 
+
+    let buyerInfo = customerNum ? `تسجيل يدوي: ${customerNum}` : "مباشر (يدوي)";
+    if(!item.buyers) item.buyers = [];
+    item.buyers.push(buyerInfo);
+
+    item.soldProfiles = item.totalProfiles || 1;
+    item.status = 'sold';
+    item.soldDate = new Date().toLocaleDateString('ar-EG');
+    
+    stock[i] = item;
+    store.stock = JSON.stringify(stock); fbSave("stock", stock);
+    
+    logAction(`تم بيع اشتراك من المخزون يدوياً: ${item.displayName || item.service}`);
+    refreshStock(); loadPurchaseStock();  notify("تم نقل الاشتراك إلى المباع");
 }
 
 function renderServicesSettings() {
+    let list = safeJSON(store.services, []);
     let div = document.getElementById("servicesList");
+    let isAdmin = currentUser.role === 'admin';
     div.innerHTML = "";
-    appData.services.forEach(s => {
-        div.innerHTML += `<span class="badge badge-info" style="padding:10px;">${esc(s._fid || s)} <i class="fas fa-times" onclick="deleteService('${s._fid}')" style="color:red; cursor:pointer"></i></span>`;
-    });
-}
+    
+    let addArea = document.querySelector("#sec-manage-services .inner-box > div:first-child");
+    if(addArea) addArea.style.display = isAdmin ? "flex" : "none";
 
-function refreshLogs() {
-    let tbody = document.getElementById("logsTableBody");
-    let rows = "";
-    appData.activityLog.slice(0, 50).forEach(l => {
-        rows += `<tr><td>${l.time}</td><td>${l.user}</td><td>${l.action}</td><td>-</td></tr>`;
-    });
-    tbody.innerHTML = rows;
-}
-
-// Helpers
-function getOS() { return "Unknown"; }
-function getRoleName(r) { return r; }
-function notify(m, t="success") { 
-    let n = document.getElementById("notification");
-    n.textContent = m; n.style.background = t==="success"?"#10b981":"#ef4444";
-    n.style.display="block"; setTimeout(()=>n.style.display="none", 3000);
-}
-// Stub functions for complex dialogs if needed
-function showConfirm(t,m,y,n) { return confirm(m); }
-function showPrompt(t,m) { return prompt(m); }
-function closeModal(e) { if(e==='force'||e.target.id==='detailsModal') document.getElementById('detailsModal').classList.add('hidden'); }
-function toggleSidebar(){ document.getElementById('mySidebar').classList.toggle('active'); document.querySelector('.sidebar-overlay').classList.toggle('active'); }
-function loadPurchaseStock() {
-    let sel = document.getElementById("sub");
-    sel.innerHTML = '<option value="">اختر...</option>';
-    appData.stock.filter(s => s.status === 'active').forEach(s => {
-        let op = document.createElement("option"); op.value = s._fid; op.text = s.service + ` (${s.soldProfiles||0}/${s.totalProfiles})`;
-        sel.appendChild(op);
+    list.forEach((s, idx) => {
+        let delIcon = isAdmin ? `<i class="fas fa-times" style="margin-right:8px; cursor:pointer; color:red" onclick="deleteService(${idx})"></i>` : '';
+        div.innerHTML += `<span class="badge badge-info" style="padding:10px; font-size:14px;">${esc(s)} ${delIcon}</span>`;
     });
 }
-function loadServices() {
-    let sel = document.getElementById("stService");
-    sel.innerHTML = "";
-    appData.services.forEach(s => {
-        let op = document.createElement("option"); op.value = s._fid || s; op.text = s._fid || s; 
-        sel.appendChild(op);
-    });
-}
-function loadProfitSettings() {
-    let s = appData.settings;
-    if(s) {
-        setAhmadProp.value = s.ahmad||35; setMohamedProp.value = s.mohamed||35; setStoreProp.value = s.store||30;
-        setDeductCost.checked = s.deductCost; setExchangeRate.value = s.exchangeRate||0;
+function addService() {
+    let inp = document.getElementById("newServiceName");
+    let val = inp.value.trim();
+    if(!val) return;
+    let list = safeJSON(store.services, []);
+    if(!list.includes(val)) {
+        list.push(val);
+        store.services = JSON.stringify(list); fbSave("services", list);
+        logAction(`إضافة خدمة جديدة: ${val}`);
+        renderServicesSettings();
+        
     }
+    inp.value = "";
 }
-function switchLogsTab() {} 
-function changeLogsVis() {}
-function logout() { location.reload(); }
-function showPage(id, btn) {
-    document.querySelectorAll(".card").forEach(c => c.classList.add("hidden"));
-    document.getElementById(id).classList.remove("hidden");
-    document.querySelectorAll(".sidebar button").forEach(b => b.classList.remove("active"));
-    if(btn) btn.classList.add("active");
-    refreshAll();
+function deleteService(idx) {
+    let list = safeJSON(store.services, []);
+    list.splice(idx, 1);
+    store.services = JSON.stringify(list); fbSave("services", list);
+    renderServicesSettings();
+    
 }
 
-window.onload = init;
+window.onload=init;
 </script>
 </body>
 </html>
