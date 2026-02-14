@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mega Store Pro | Closed System</title>
+    <title>Mega Store Pro | System</title>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 576 512'%3E%3Cpath fill='%236366f1' d='M0 24C0 10.7 10.7 0 24 0H69.5c22 0 41.5 12.8 50.6 32h411c26.3 0 45.5 25 38.6 50.4l-41 152.3c-8.5 31.4-37 53.3-69.5 53.3H170.7l5.4 28.5c2.2 11.3 12.1 19.5 23.6 19.5H488c13.3 0 24 10.7 24 24s-10.7 24-24 24H199.7c-34.6 0-64.3-24.6-70.7-58.5L77.4 54.5c-.7-3.8-4-6.5-7.9-6.5H24C10.7 48 0 37.3 0 24zM128 464a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zm336-48a48 48 0 1 1 0 96 48 48 0 1 1 0-96z'/%3E%3C/svg%3E">
 
@@ -1006,6 +1006,26 @@
     </div>
 </div>
 
+<script>
+// --- GLOBAL DEFINITIONS & UTILS ---
+const fix = n => Number(n).toFixed(2);
+function safeJSON(str, fallback) {
+    try { return str ? JSON.parse(str) : fallback; }
+    catch(e) { console.warn("JSON parse error:", e); return fallback; }
+}
+function esc(s) { 
+    if(typeof s !== 'string') return s; 
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); 
+}
+
+const DEFAULT_USER = {
+    username: "Mohamed Ahmed",
+    password: "0000",
+    role: "admin", 
+    status: "active",
+    lastLogin: "-",
+    deviceInfo: "-"
+};
 
 // ─── Firebase Configuration ───────────────────────────────────────
 const firebaseConfig = {
@@ -1024,8 +1044,80 @@ let fbDocRef = null;
 let fbConnected = false;
 let isFbSaving = false;
 let fbSavePending = {};
-
+let myProfitChart = null;
+let mySalesChart = null;
+let currentUser = null; 
+let isDemoMode = false;
+let currentStockTab = 'active';
+let currentLogsTab = 'financial';
+let currentPage = { logs: 1, expiring: 1, stock: 1, history: 1 };
+const ITEMS_PER_PAGE = 50;
 const STORE_KEYS = ["users","wallets","purchases","invest","settings","generalNotes","todoList","activityLog","stock","services"];
+
+// --- UPDATED DIALOG SYSTEM ---
+let _confirmResolve = null;
+let _promptResolve = null;
+
+function showConfirm(title, msg, okText = "تأكيد", cancelText = "إلغاء", iconHtml = '<i class="fas fa-exclamation-triangle"></i>', thirdText = null) {
+    return new Promise(resolve => {
+        _confirmResolve = resolve;
+        document.getElementById("cdIcon").innerHTML = iconHtml; 
+        document.getElementById("cdTitle").textContent = title;
+        document.getElementById("cdMsg").textContent = msg;
+        document.getElementById("cdOkBtn").innerHTML = okText;
+        document.getElementById("cdCancelBtn").innerHTML = cancelText;
+        
+        let tBtn = document.getElementById("cdThirdBtn");
+        if(thirdText) {
+            tBtn.innerHTML = thirdText;
+            tBtn.style.display = "block";
+            tBtn.onclick = () => resolveConfirm('third');
+        } else {
+            tBtn.style.display = "none";
+        }
+        
+        document.getElementById("cdOkBtn").onclick = () => resolveConfirm(true);
+        document.getElementById("customConfirmDialog").style.display = "flex";
+    });
+}
+function resolveConfirm(val) {
+    document.getElementById("customConfirmDialog").style.display = "none";
+    if(_confirmResolve) { _confirmResolve(val); _confirmResolve = null; }
+}
+
+function showPrompt(title, msg = "", placeholder = "", iconHtml = '<i class="fas fa-pen"></i>') {
+    return new Promise(resolve => {
+        _promptResolve = resolve;
+        document.getElementById("pdIcon").innerHTML = iconHtml; 
+        document.getElementById("pdTitle").textContent = title;
+        document.getElementById("pdMsg").textContent = msg;
+        document.getElementById("pdInput").placeholder = placeholder;
+        document.getElementById("pdInput").value = "";
+        
+        let selectExists = document.getElementById("logsVisSelect");
+        if(!selectExists) document.getElementById("pdInputContainer").style.display = "block";
+        
+        document.getElementById("customPromptDialog").style.display = "flex";
+        setTimeout(() => document.getElementById("pdInput").focus(), 100);
+    });
+}
+function resolvePrompt(ok) {
+    document.getElementById("customPromptDialog").style.display = "none";
+    let val = ok ? document.getElementById("pdInput").value.trim() : null;
+    if(_promptResolve) { _promptResolve(val); _promptResolve = null; }
+}
+
+document.addEventListener("keydown", e => {
+    if(e.key === "Enter") {
+        if(document.getElementById("customPromptDialog").style.display === "flex") resolvePrompt(true);
+        if(document.getElementById("customConfirmDialog").style.display === "flex" && document.getElementById("cdThirdBtn").style.display === "none") resolveConfirm(true);
+    }
+    if(e.key === "Escape") {
+        if(document.getElementById("customPromptDialog").style.display === "flex") resolvePrompt(false);
+        if(document.getElementById("customConfirmDialog").style.display === "flex") resolveConfirm(false);
+        if(document.getElementById("purchaseConfirmModal").style.display === "flex") document.getElementById("purchaseConfirmModal").style.display = "none";
+    }
+});
 
 // Save a single key to Firebase (partial update - only changed key)
 function fbSave(key, val) {
@@ -1121,101 +1213,6 @@ function getDefaultData() {
         services: safeJSON(store.services, [])
     };
 }
-// ──────────────────────────────────────────────────────────────────
-<script>
-const fix=n=>Number(n).toFixed(2);
-function safeJSON(str, fallback) {
-    try { return str ? JSON.parse(str) : fallback; }
-    catch(e) { console.warn("JSON parse error:", e); return fallback; }
-}
-function esc(s) { if(typeof s !== 'string') return s; return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
-
-// --- UPDATED DIALOG SYSTEM ---
-let _confirmResolve = null;
-let _promptResolve = null;
-
-function showConfirm(title, msg, okText = "تأكيد", cancelText = "إلغاء", iconHtml = '<i class="fas fa-exclamation-triangle"></i>', thirdText = null) {
-    return new Promise(resolve => {
-        _confirmResolve = resolve;
-        document.getElementById("cdIcon").innerHTML = iconHtml; 
-        document.getElementById("cdTitle").textContent = title;
-        document.getElementById("cdMsg").textContent = msg;
-        document.getElementById("cdOkBtn").innerHTML = okText;
-        document.getElementById("cdCancelBtn").innerHTML = cancelText;
-        
-        let tBtn = document.getElementById("cdThirdBtn");
-        if(thirdText) {
-            tBtn.innerHTML = thirdText;
-            tBtn.style.display = "block";
-            tBtn.onclick = () => resolveConfirm('third');
-        } else {
-            tBtn.style.display = "none";
-        }
-        
-        document.getElementById("cdOkBtn").onclick = () => resolveConfirm(true);
-        document.getElementById("customConfirmDialog").style.display = "flex";
-    });
-}
-function resolveConfirm(val) {
-    document.getElementById("customConfirmDialog").style.display = "none";
-    if(_confirmResolve) { _confirmResolve(val); _confirmResolve = null; }
-}
-
-function showPrompt(title, msg = "", placeholder = "", iconHtml = '<i class="fas fa-pen"></i>') {
-    return new Promise(resolve => {
-        _promptResolve = resolve;
-        document.getElementById("pdIcon").innerHTML = iconHtml; 
-        document.getElementById("pdTitle").textContent = title;
-        document.getElementById("pdMsg").textContent = msg;
-        document.getElementById("pdInput").placeholder = placeholder;
-        document.getElementById("pdInput").value = "";
-        
-        let selectExists = document.getElementById("logsVisSelect");
-        if(!selectExists) document.getElementById("pdInputContainer").style.display = "block";
-        
-        document.getElementById("customPromptDialog").style.display = "flex";
-        setTimeout(() => document.getElementById("pdInput").focus(), 100);
-    });
-}
-function resolvePrompt(ok) {
-    document.getElementById("customPromptDialog").style.display = "none";
-    let val = ok ? document.getElementById("pdInput").value.trim() : null;
-    if(_promptResolve) { _promptResolve(val); _promptResolve = null; }
-}
-
-document.addEventListener("keydown", e => {
-    if(e.key === "Enter") {
-        if(document.getElementById("customPromptDialog").style.display === "flex") resolvePrompt(true);
-        if(document.getElementById("customConfirmDialog").style.display === "flex" && document.getElementById("cdThirdBtn").style.display === "none") resolveConfirm(true);
-    }
-    if(e.key === "Escape") {
-        if(document.getElementById("customPromptDialog").style.display === "flex") resolvePrompt(false);
-        if(document.getElementById("customConfirmDialog").style.display === "flex") resolveConfirm(false);
-        if(document.getElementById("purchaseConfirmModal").style.display === "flex") document.getElementById("purchaseConfirmModal").style.display = "none";
-    }
-});
-
-let myProfitChart = null;
-let mySalesChart = null;
-let currentUser = null; 
-let isDemoMode = false;
-
-let currentStockTab = 'active';
-let currentLogsTab = 'financial';
-
-let currentPage = { logs: 1, expiring: 1, stock: 1, history: 1 };
-const ITEMS_PER_PAGE = 50;
-
-
-
-const DEFAULT_USER = {
-    username: "Mohamed Ahmed",
-    password: "0000",
-    role: "admin", 
-    status: "active",
-    lastLogin: "-",
-    deviceInfo: "-"
-};
 
 function showModalDetails(details) {
     if(!details) return;
@@ -1398,8 +1395,6 @@ function updateStorageUI() {
     if(bar) { bar.style.width = fbConnected ? "100%" : "0%"; bar.style.background = fbConnected ? "var(--success)" : "var(--danger)"; }
 }
 
-}
-
 async function toggleDemoMode() {
     let current = localStorage.getItem("isDemoMode") === "true";
     let newState = !current;
@@ -1417,8 +1412,6 @@ async function toggleDemoMode() {
         location.reload();
     }
 }
-
-
 
 async function attemptLogin() {
     const btn = document.getElementById("btnLogin");
@@ -1462,6 +1455,13 @@ async function attemptLogin() {
     }
     
     btn.classList.remove('loading'); 
+}
+
+function checkExpiringOnLogin() {
+    let p = safeJSON(store.purchases, []);
+    let now = new Date().getTime(), days3 = 3 * 86400000;
+    let expiringCount = p.filter(x => x.expiry && !x.expiryDismissed && (x.expiry - now < days3 && x.expiry - now > -2592000000)).length;
+    if(expiringCount > 0) notify(`يوجد ${expiringCount} اشتراك ينتهي قريباً`, "warning");
 }
 
 function getOS() {
@@ -1806,7 +1806,7 @@ function _processNotifyQueue() {
 
 function loadWallets(){
     let wallets=safeJSON(store.wallets, {});
-    const selects = [wallet, modWallet, fromWallet, renameWalletSelect, tfFromWallet, tfToWallet, wWalletAhmad, wWalletMohamed, wWalletStore];
+    const selects = [window.wallet, window.modWallet, window.fromWallet, window.renameWalletSelect, window.tfFromWallet, window.tfToWallet, window.wWalletAhmad, window.wWalletMohamed, window.wWalletStore];
     selects.forEach(s => { 
         if(s) { 
             s.innerHTML = s.id.startsWith("wWallet") ? '<option value="">اختر محفظة السحب</option>' : ""; 
@@ -2795,10 +2795,9 @@ function deleteService(idx) {
     list.splice(idx, 1);
     store.services = JSON.stringify(list); fbSave("services", list);
     renderServicesSettings();
-    
 }
 
-window.onload=init;
+window.onload = init;
 </script>
 </body>
 </html>
