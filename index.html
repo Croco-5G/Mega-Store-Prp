@@ -1120,11 +1120,14 @@ document.addEventListener("keydown", e => {
 });
 
 // Save a single key to Firebase (partial update - only changed key)
+// دالة الحفظ المصححة
 function fbSave(key, val) {
     if (isDemoMode) return;
     if (!fbDocRef) return;
     updateSyncStatus("جاري الحفظ...", "loading");
-    fbDocRef.update({ [key]: val })
+    
+    // التغيير هنا: استخدام set مع merge بدلاً من update
+    fbDocRef.set({ [key]: val }, { merge: true })
         .catch(err => {
             console.error("fbSave error:", err);
             updateSyncStatus("غير متصل", "error");
@@ -2801,3 +2804,4 @@ window.onload = init;
 </script>
 </body>
 </html>
+
