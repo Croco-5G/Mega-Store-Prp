@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mega Store Pro | Closed System</title>
+    <title>Mega Store | System</title>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 576 512'%3E%3Cpath fill='%236366f1' d='M0 24C0 10.7 10.7 0 24 0H69.5c22 0 41.5 12.8 50.6 32h411c26.3 0 45.5 25 38.6 50.4l-41 152.3c-8.5 31.4-37 53.3-69.5 53.3H170.7l5.4 28.5c2.2 11.3 12.1 19.5 23.6 19.5H488c13.3 0 24 10.7 24 24s-10.7 24-24 24H199.7c-34.6 0-64.3-24.6-70.7-58.5L77.4 54.5c-.7-3.8-4-6.5-7.9-6.5H24C10.7 48 0 37.3 0 24zM128 464a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zm336-48a48 48 0 1 1 0 96 48 48 0 1 1 0-96z'/%3E%3C/svg%3E">
 
@@ -517,6 +517,39 @@
     </div>
 </div>
 
+<div id="stockConfirmModal" class="dialog-modal" style="display:none;">
+    <div class="dialog-box" style="text-align:right; max-width:480px">
+        <div style="text-align:center; font-size:48px; margin-bottom:15px; color:var(--primary);"><i class="fas fa-cubes"></i></div>
+        <h3 style="text-align:center; margin-top:0; margin-bottom:5px;">تأكيد شراء المخزون</h3>
+        <div id="stockConfirmBody" style="background:var(--bg-input); border-radius:14px; padding:20px; margin:15px 0; font-size:14px; line-height:1.8; border:1px dashed var(--border-color);"></div>
+        <div class="dialog-actions">
+            <button class="btn btn-primary" id="stockConfirmOkBtn"><i class="fas fa-check"></i> تأكيد وخصم الرصيد</button>
+            <button class="btn btn-danger" onclick="document.getElementById('stockConfirmModal').style.display='none'">إلغاء</button>
+        </div>
+    </div>
+</div>
+
+<div id="couponModal" class="dialog-modal" style="display:none;">
+    <div class="dialog-box" style="text-align:center; max-width:400px">
+        <div style="font-size:50px; color:var(--accent); margin-bottom:15px"><i class="fas fa-gift"></i></div>
+        <h3 style="margin-top:0;">مبارك! كود خصم جديد</h3>
+        <p id="couponModalMsg" style="color:var(--text-muted); font-size:14px; margin-bottom:20px"></p>
+        
+        <div style="background:var(--yellow-bg); border:2px dashed var(--yellow-border); padding:15px; border-radius:12px; margin-bottom:20px;">
+            <h2 id="couponModalCode" style="margin:0; color:var(--yellow-text); letter-spacing:3px;"></h2>
+            <div style="color:var(--yellow-text); font-weight:bold; margin-top:5px;" id="couponModalPct"></div>
+            <div style="color:var(--text-muted); font-size:12px; margin-top:5px;" id="couponModalDays"></div>
+        </div>
+
+        <p style="font-size:14px; font-weight:bold; margin-bottom:15px;" id="couponModalQuestion"></p>
+
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <a id="couponWhatsAppBtn" target="_blank" class="btn btn-success" style="background:#25D366; color:white; width:100%"><i class="fab fa-whatsapp"></i> إرسال الكود للعميل</a>
+            <button class="btn btn-danger" style="background:transparent; border:1px solid var(--danger); color:var(--danger)" onclick="document.getElementById('couponModal').style.display='none'">إغلاق</button>
+        </div>
+    </div>
+</div>
+
 <div class="sidebar" id="mySidebar">
     <div class="brand"><i class="fas fa-rocket"></i> MEGA STORE</div>
     
@@ -531,6 +564,7 @@
         <button onclick="showPage('purchase', this)" class="active" id="btnPurchase"><i class="fas fa-cart-plus"></i> عملية شراء</button>
         <button onclick="showPage('stock', this)" id="btnStock" class="hidden"><i class="fas fa-cubes"></i> المخزون</button>
         <button onclick="showPage('expiring', this)" id="btnExpiring"><i class="fas fa-hourglass-half"></i> التنبيهات <span id="expiryBadge" class="notif-badge" style="background:var(--danger); color:white; padding:2px 6px; border-radius:10px; font-size:10px; display:none"></span></button>
+        <button onclick="showPage('discounts', this)" id="btnDiscounts"><i class="fas fa-ticket-alt"></i> الخصومات</button>
         <button onclick="showPage('wallets', this)" id="btnWallets"><i class="fas fa-wallet"></i> المحافظ</button>
         <button onclick="showPage('history', this)" id="btnHistory"><i class="fas fa-history"></i> السجل المالي</button>
         <button onclick="showPage('analytics', this)" id="btnAnalytics"><i class="fas fa-chart-pie"></i> الإحصائيات</button>
@@ -566,30 +600,53 @@
     <div id="purchase" class="card">
         <h3><i class="fas fa-cart-plus" style="color:var(--primary)"></i> تسجيل اشتراك جديد</h3>
         <div class="grid-2">
-            <div class="input-group"><label>نوع الاشتراك</label>
-                <select id="sub"><option value="">اختر من المخزون المتاح...</option></select>
+            <div class="input-group"><label>نوع الاشتراك (المخزون)</label>
+                <select id="sub" onchange="syncPurchaseDuration()"><option value="">اختر من المخزون المتاح...</option></select>
             </div>
             <div class="input-group"><label>اسم العميل</label><input id="customer" placeholder="اسم العميل"></div>
         </div>
         <div class="grid-2">
-            <div class="input-group"><label>رقم جوال العميل (اختياري)</label><input id="customerPhone" placeholder="059xxxxxxx أو رقم هوية..." oninput="validatePhoneInput(this)"></div>
-            <div class="input-group"><label>مدة الاشتراك</label>
-                <select id="subDuration">
-                    <option value="1">1 شهر</option><option value="2">2 شهر</option><option value="3">3 شهور</option><option value="4">4 شهور</option><option value="5">5 شهور</option><option value="6">6 شهور</option><option value="7">7 شهور</option><option value="8">8 شهور</option><option value="9">9 شهور</option><option value="10">10 شهور</option><option value="11">11 شهر</option><option value="12">12 شهر (سنة)</option>
-                </select>
-            </div>
+            <div class="input-group"><label>رقم جوال العميل (مع المقدمة)</label><input id="customerPhone" placeholder="+97xxxxxxxxxx" oninput="validatePhoneInput(this)"></div>
+            <div class="input-group"><label>يُودع في محفظة:</label><select id="wallet"></select></div>
         </div>
         <div class="grid-2">
             <div class="input-group"><label>المبلغ المدفوع من العميل</label><div style="display:flex; gap:10px"><input type="number" id="paidAmount" placeholder="0.00"><select id="paidCurrency" style="width:100px"><option value="₪">₪ شيكل</option><option value="$">$ دولار</option></select></div></div>
-            <div class="input-group"><label>التكلفة علينا</label><div style="display:flex; gap:10px"><input type="number" id="costAmount" placeholder="0.00"><select id="costCurrency" style="width:100px"><option value="$">$ دولار</option><option value="₪">₪ شيكل</option></select></div></div>
         </div>
-        <div class="inner-box" style="margin-top: 20px; border-style: dashed !important; border-color: var(--primary) !important;">
-            <div class="grid-2">
-                <div><label>يُخصم من محفظة (المصدر):</label><select id="fromWallet"></select></div>
-                <div><label>يُودع الربح في محفظة:</label><select id="wallet"></select></div>
+        
+        <div class="grid-2" style="margin-top:10px; padding-top:20px; border-top:1px dashed var(--border-color)">
+            <div class="input-group">
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 32px;">
+                    <input type="checkbox" id="isCompensation" style="width:20px; height:20px; margin:0; accent-color:var(--danger)">
+                    <label for="isCompensation" style="margin:0; color:var(--danger); font-weight:800; cursor:pointer">تسجيل كتعويض</label>
+                </div>
+            </div>
+            <div class="input-group">
+                <label>كود الخصم (إن وجد)</label>
+                <input id="discountCodeInput" placeholder="أدخل الكود المكون من 9 أرقام" style="border-color:var(--accent)">
             </div>
         </div>
+        <input type="hidden" id="subDuration" value="1">
         <button class="btn btn-primary" id="btnSubmitPurchase" style="width:100%; margin-top:25px; padding: 16px; font-size:16px;" onclick="addPurchase()"><i class="fas fa-check-circle"></i> إتمام وحفظ</button>
+    </div>
+
+    <div id="discounts" class="card hidden">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; flex-wrap:wrap; gap:10px">
+            <h3 style="margin-bottom:0"><i class="fas fa-ticket-alt" style="color:var(--primary)"></i> الخصومات الفعالة</h3>
+            <button id="btnDeleteAllDiscounts" class="btn btn-danger hidden" onclick="deleteAllDiscounts()"><i class="fas fa-trash-alt"></i> حذف جميع الأكواد</button>
+        </div>
+        <div class="input-group" style="margin-bottom:20px;">
+            <div style="position:relative;">
+                <input id="discountSearch" onkeyup="currentPage.discounts=1; refreshDiscounts()" placeholder="بحث بكود الخصم أو اسم العميل..." style="padding-right: 40px;">
+                <i class="fas fa-search" style="position:absolute; right:15px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+            </div>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead><tr><th style="text-align:center;">كود الخصم</th><th style="text-align:center;">العميل</th><th style="text-align:center;">نسبة الخصم</th><th style="text-align:center;">المتبقي</th><th style="text-align:center;">حذف</th></tr></thead>
+                <tbody id="discountsBody"></tbody>
+            </table>
+        </div>
+        <div id="discountsPagination" class="pagination"></div>
     </div>
 
     <div id="security" class="card hidden">
@@ -820,6 +877,41 @@
             </div>
         </div>
 
+        <div id="sec-discount-settings">
+            <h3><i class="fas fa-ticket-alt" style="color:var(--primary)"></i> إعدادات أكواد الخصم</h3>
+            <div class="inner-box" style="margin-bottom:40px;">
+                <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="setDiscountEnabled" style="width: 20px; height: 20px; margin:0;">
+                    <label for="setDiscountEnabled" style="margin-bottom: 0;">تفعيل نظام إنتاج أكواد الخصم التلقائي؟</label>
+                </div>
+                <div class="grid-2">
+                    <div class="input-group">
+                        <label>نسبة الحصول على كود (%)</label>
+                        <input type="number" id="setDiscountChance" placeholder="مثال: 25">
+                    </div>
+                    <div class="input-group">
+                        <label>نسبة الخصم الناتجة (%)</label>
+                        <div style="display:flex; gap:10px">
+                            <input type="number" id="setDiscountMin" placeholder="الحد الأدنى (10)">
+                            <input type="number" id="setDiscountMax" placeholder="الحد الأقصى (20)">
+                        </div>
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="input-group">
+                        <label>مدة الصلاحية (بالأيام)</label>
+                        <div style="display:flex; gap:10px">
+                            <input type="number" id="setValidityMin" placeholder="الحد الأدنى (15)">
+                            <input type="number" id="setValidityMax" placeholder="الحد الأقصى (45)">
+                        </div>
+                    </div>
+                    <div class="input-group" style="display:flex; align-items:flex-end;">
+                        <button class="btn btn-primary" style="width:100%; height:48px;" onclick="saveDiscountSettings()">حفظ إعدادات الخصم</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="sec-manage-services">
             <h3><i class="fas fa-tags" style="color:var(--primary)"></i> إدارة الخدمات</h3>
             <div class="inner-box" style="margin-bottom:40px">
@@ -868,7 +960,6 @@
                 <div class="input-group" style="flex:2; min-width:200px"><label>المحفظة</label><select id="modWallet"></select></div>
                 <div class="input-group" style="flex:1; min-width:100px"><label>الرصيد</label><input id="modAmount" type="number" placeholder="0.00"></div>
                 <button class="btn btn-primary" style="height:48px; margin-bottom:18px" onclick="setWallet()">حفظ</button>
-                <button class="btn btn-danger" style="height:48px; margin-bottom:18px" onclick="deleteWallet()"><i class="fas fa-trash-alt"></i></button>
             </div>
         </div>
 
@@ -903,11 +994,19 @@
         </div>
 
         <div id="sec-rename-wallet">
-            <h3><i class="fas fa-pen" style="color:var(--primary)"></i> تعديل اسم محفظة</h3>
-            <div class="inner-box" style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom:40px">
-                <select id="renameWalletSelect" style="flex:1"></select>
-                <input id="renameWalletInput" placeholder="الاسم الجديد" style="flex:1">
-                <button class="btn btn-warning" onclick="renameWallet()">تعديل</button>
+            <h3><i class="fas fa-edit" style="color:var(--primary)"></i> إدارة المحفظة (تعديل)</h3>
+            <div class="inner-box" style="margin-bottom:40px">
+                <div class="input-group"><label>اختر المحفظة</label><select id="renameWalletSelect" onchange="fillWalletEditData()"></select></div>
+                <div class="grid-2">
+                    <div class="input-group"><label>الاسم الجديد</label><input id="renameWalletInput" placeholder="الاسم"></div>
+                    <div class="input-group"><label>العملة</label><select id="renameWalletCur"><option value="$">$ دولار</option><option value="₪">₪ شيكل</option></select></div>
+                </div>
+                <div class="input-group">
+                    <label>الحالة</label>
+                    <select id="renameWalletStatus"><option value="true">نشط (Active)</option><option value="false">غير نشط (Inactive)</option></select>
+                </div>
+                <button class="btn btn-danger" style="width:100%; margin-bottom:10px" onclick="deleteWallet()"><i class="fas fa-trash-alt"></i> حذف المحفظة</button>
+                <button class="btn btn-warning" style="width:100%" onclick="updateWalletData()">حفظ التعديلات</button>
             </div>
         </div>
 
@@ -925,12 +1024,11 @@
                 </div>
                 <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border-color);">
                 <div class="input-group">
-                    <label>سعر صرف الدولار الثابت</label>
+                    <label>سعر صرف الدولار الثابت (ضروري لحساب التكاليف)</label>
                     <div style="display:flex; align-items:center; gap:10px">
                         <input type="number" id="setExchangeRate" placeholder="أدخل السعر (مثلاً 3.5)">
                         <button class="btn btn-primary" onclick="saveProfitSettings()">حفظ</button>
                     </div>
-                    <small style="color:var(--text-muted);">اتركه 0 للسؤال عند كل عملية.</small>
                 </div>
             </div>
         </div>
@@ -1000,17 +1098,32 @@
         <div class="input-group"><label>نوع الخدمة</label>
             <select id="stService"><option value="">اختر الخدمة...</option></select>
         </div>
+        
+        <div id="stockPurchaseInputs">
+            <div class="input-group" style="background:var(--yellow-bg); padding:10px; border-radius:8px; border:1px solid var(--yellow-border)">
+                <label style="color:var(--yellow-text)">دفع التكلفة من محفظة:</label>
+                <select id="stWallet"></select>
+            </div>
+            <div class="input-group" style="background:var(--yellow-bg); padding:10px; border-radius:8px; border:1px solid var(--yellow-border)">
+                <label style="color:var(--yellow-text)">سعر التكلفة (يخصم فوراً):</label>
+                <input type="number" id="stCost" placeholder="0.00">
+            </div>
+        </div>
+
         <div class="input-group"><label>عدد البروفايلات (حسابات)</label>
             <input type="number" id="stProfiles" min="1" step="1" value="1" oninput="this.value = Math.max(1, Math.floor(this.value||1))">
         </div>
         <div class="input-group"><label>اسم البائع</label><input id="stVendor" placeholder="اسم البائع"></div>
         <div class="input-group"><label>المدة</label>
-            <select id="stDuration"><option value="1">1 شهر</option><option value="2">2 شهر</option><option value="3">3 شهور</option><option value="6">6 شهور</option><option value="12">12 شهر</option></select>
+            <select id="stDuration"><option value="0">بدون مدة</option><option value="1">1 شهر</option><option value="2">2 شهر</option><option value="3">3 شهور</option><option value="6">6 شهور</option><option value="12">12 شهر</option></select>
         </div>
         <div class="input-group"><label>البريد الإلكتروني</label><input id="stEmail" placeholder="email@example.com"></div>
         <div class="input-group"><label>كلمة المرور</label><input id="stPass" placeholder="Password"></div>
-        <div class="input-group"><label>ملاحظات</label><textarea id="stNotes" style="height:80px"></textarea></div>
-        <button class="btn btn-primary" style="width:100%; margin-top:10px" onclick="saveStock()"><i class="fas fa-save"></i> حفظ</button>
+        <div class="input-group"><label>ملاحظات (قابل للتعديل لاحقاً)</label><textarea id="stNotes" style="height:80px"></textarea></div>
+        
+        <button id="btnSaveStock" class="btn btn-primary" style="width:100%; margin-top:10px" onclick="verifyStockAdd()"><i class="fas fa-save"></i> حفظ وشراء</button>
+        <button id="btnUpdateNote" class="btn btn-warning hidden" style="width:100%; margin-top:10px" onclick="updateStockNote()"><i class="fas fa-edit"></i> تحديث الملاحظات فقط</button>
+        
         <button class="btn" style="width:100%; margin-top:10px; background:transparent; color:var(--text-muted); border:1px solid var(--border-color)" onclick="closeStockModal('force')">إلغاء</button>
     </div>
 </div>
@@ -1036,16 +1149,16 @@ const DEFAULT_USER = {
     deviceInfo: "-"
 };
 
-// ─── Firebase Configuration ───────────────────────────────────────
+// ─── Firebase Configuration ───────────────────────────────────────  
 const firebaseConfig = {
-    apiKey: "AIzaSyBDCTQSHeRD7gG4XdyG1nQxAD1ECQHzxNE",
-    authDomain: "mega-store-58cc6.firebaseapp.com",
-    projectId: "mega-store-58cc6",
-    storageBucket: "mega-store-58cc6.firebasestorage.app",
-    messagingSenderId: "477692639493",
-    appId: "1:477692639493:web:3520e16e20fa0fda089f6c",
-    measurementId: "G-PBR93L70M1"
-};
+    apiKey: "AIzaSyA8a14tvoyKA5ADkRqUugvQyy8P2VFM_3o",
+    authDomain: "mega-store-f4cec.firebaseapp.com",
+    projectId: "mega-store-f4cec",
+    storageBucket: "mega-store-f4cec.firebasestorage.app",
+    messagingSenderId: "821297908020",
+    appId: "1:821297908020:web:d11ed6bbec76a40c6bbd61"
+  };
+
 
 // ─── In-Memory Store (replaces localStorage for app data) ────────
 let store = {};
@@ -1059,9 +1172,9 @@ let currentUser = null;
 let isDemoMode = false;
 let currentStockTab = 'active';
 let currentLogsTab = 'financial';
-let currentPage = { logs: 1, expiring: 1, stock: 1, history: 1 };
+let currentPage = { logs: 1, expiring: 1, stock: 1, history: 1, discounts: 1 };
 const ITEMS_PER_PAGE = 50;
-const STORE_KEYS = ["users","wallets","purchases","invest","settings","generalNotes","todoList","activityLog","stock","services"];
+const STORE_KEYS = ["users","wallets","purchases","invest","settings","generalNotes","todoList","activityLog","stock","services","discounts"];
 
 // --- UPDATED DIALOG SYSTEM ---
 let _confirmResolve = null;
@@ -1125,25 +1238,31 @@ document.addEventListener("keydown", e => {
         if(document.getElementById("customPromptDialog").style.display === "flex") resolvePrompt(false);
         if(document.getElementById("customConfirmDialog").style.display === "flex") resolveConfirm(false);
         if(document.getElementById("purchaseConfirmModal").style.display === "flex") document.getElementById("purchaseConfirmModal").style.display = "none";
+        if(document.getElementById("stockConfirmModal").style.display === "flex") document.getElementById("stockConfirmModal").style.display = "none";
     }
 });
 
-// Save a single key to Firebase (Fixed: Using set with merge)
+// Save a single key to Firebase
 function fbSave(key, val) {
     if (isDemoMode) return;
     if (!fbDocRef) return;
     updateSyncStatus("جاري الحفظ...", "loading");
     
-    fbDocRef.set({ [key]: val }, { merge: true })
+    // استخدام update لضمان استبدال البيانات بالكامل ومسح أي شيء تم حذفه
+    fbDocRef.update({ [key]: val })
         .catch(err => {
-            console.error("fbSave error:", err);
-            updateSyncStatus("غير متصل", "error");
+            // كخيار احتياطي في حال كان المستند جديداً
+            fbDocRef.set({ [key]: val }, { merge: true }).catch(e => {
+                console.error("fbSave error:", e);
+                updateSyncStatus("غير متصل", "error");
+            });
         });
 }
 
 function initFirebase() {
     const app = firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore(app);
+
     fbDocRef = db.collection("megastore").doc("data");
 
     updateSyncStatus("جاري الاتصال...", "loading");
@@ -1155,14 +1274,7 @@ function initFirebase() {
             const fromCache = doc.metadata.fromCache;
             const hasPendingWrites = doc.metadata.hasPendingWrites;
             
-            if (fromCache || !doc.exists) {
-                fbConnected = false;
-                updateSyncStatus("غير متصل", "error");
-                updateStorageUI();
-                return;
-            }
-            
-            fbConnected = true;
+            fbConnected = !fromCache; 
             
             if (doc.exists) {
                 const data = doc.data();
@@ -1173,16 +1285,17 @@ function initFirebase() {
                 });
                 if (currentUser) refreshAll();
             } else {
-                // First time - create document with defaults
                 fbDocRef.set(getDefaultData()).catch(e => console.error(e));
             }
             
-            if (!hasPendingWrites) {
-                updateSyncStatus("متزامن", "success");
+            if (hasPendingWrites) {
+                updateSyncStatus("تم الحفظ (بانتظار المزامنة)", "warning"); 
+            } else {
+                updateSyncStatus("متزامن", "success"); 
             }
+            
             updateStorageUI();
             
-            // Show login if not shown yet
             if (document.getElementById("loginCard").style.display === "none" || 
                 document.getElementById("loginLayer").style.display !== "none") {
                 if (document.getElementById("loginLayer").style.display !== "none") {
@@ -1191,20 +1304,18 @@ function initFirebase() {
             }
         },
         (error) => {
-            fbConnected = false;
             console.error("Firestore error:", error);
-            updateSyncStatus("غير متصل", "error");
+            updateSyncStatus("وضع غير متصل (محمي)", "warning");
             updateStorageUI();
         }
     );
 
-    // Network status detection
     window.addEventListener('online', () => {
-        if (fbConnected) updateSyncStatus("متزامن", "success");
+        fbDocRef.get(); 
+        updateSyncStatus("جاري المزامنة...", "loading");
     });
     window.addEventListener('offline', () => {
-        fbConnected = false;
-        updateSyncStatus("غير متصل", "error");
+        updateSyncStatus("غير متصل (البيانات محفوظة)", "warning");
         updateStorageUI();
     });
 }
@@ -1215,12 +1326,13 @@ function getDefaultData() {
         wallets: safeJSON(store.wallets, {"جوال باي — سعاد":{bal:0,cur:"₪",active:true},"جوال باي — محمد":{bal:0,cur:"₪",active:true},"بال باي — أحمد":{bal:0,cur:"₪",active:true},"بايننس — احمد":{bal:0,cur:"$",active:true}}),
         purchases: safeJSON(store.purchases, []),
         invest: safeJSON(store.invest, {ahmad:{d:0,s:0},mohamed:{d:0,s:0},store:{d:0,s:0}}),
-        settings: safeJSON(store.settings, {ahmad:35,mohamed:35,store:30,deductCost:true,exchangeRate:0,logsVis:"all"}),
+        settings: safeJSON(store.settings, {ahmad:35,mohamed:35,store:30,deductCost:true,exchangeRate:0,logsVis:"all", discountEnabled:true, discountChance:25, discountMin:10, discountMax:20, validityMin:15, validityMax:45}),
         generalNotes: safeJSON(store.generalNotes, []),
         todoList: safeJSON(store.todoList, []),
         activityLog: safeJSON(store.activityLog, []),
         stock: safeJSON(store.stock, []),
-        services: safeJSON(store.services, [])
+        services: safeJSON(store.services, []),
+        discounts: safeJSON(store.discounts, [])
     };
 }
 
@@ -1253,7 +1365,11 @@ function showModalDetails(details) {
         body.innerHTML += `<hr style="margin:10px 0; border:0; border-top:1px dashed var(--border-color)">`;
         body.innerHTML += row("المبلغ الكلي", details.amount + " (" + details.fromCur + ")");
         body.innerHTML += row("العمولة", details.fee + " (" + details.fromCur + ")", true, false);
-        body.innerHTML += row("خصم العمولة من", "حصة المتجر (Capital)");
+        if(details.fromCur !== details.toCur) {
+             body.innerHTML += `<div style="padding:10px; background:var(--yellow-bg); border-radius:8px; margin:5px 0; font-size:13px; color:var(--yellow-text)"><i class="fas fa-exchange-alt"></i> تم الخصم والإضافة من حصة المتجر (تغيير عملة)</div>`;
+        } else {
+             body.innerHTML += row("خصم العمولة من", "حصة المتجر (Capital)");
+        }
         body.innerHTML += `<hr style="margin:10px 0; border:0; border-top:1px dashed var(--border-color)">`;
         body.innerHTML += row("الصافي للتحويل", details.netAmount);
         body.innerHTML += row("سعر الدولار", details.rate);
@@ -1262,16 +1378,20 @@ function showModalDetails(details) {
         body.innerHTML += row("العملية", "تسجيل شراء");
         body.innerHTML += row("العميل", esc(details.customer));
         body.innerHTML += row("الخدمة", esc(details.sub));
+        if(details.isComp) body.innerHTML += `<div style="color:var(--danger); font-weight:bold; text-align:center; padding:5px; border:1px solid var(--danger); border-radius:5px; margin:5px 0;">عملية تعويضية</div>`;
+        if(details.appliedDiscountPct > 0) body.innerHTML += `<div style="color:var(--success); font-weight:bold; text-align:center; padding:5px; border:1px solid var(--success); border-radius:5px; margin:5px 0;">تم استخدام كود خصم: ${details.appliedDiscountPct}%</div>`;
         body.innerHTML += `<hr style="margin:10px 0; border:0; border-top:1px dashed var(--border-color)">`;
-        body.innerHTML += `<h4>المحفظة المصدر: ${esc(details.wName)}</h4>`;
-        body.innerHTML += row("قبل الخصم", fix(details.wBefore));
-        body.innerHTML += row("المخصوم", "-"+details.cost, true, false);
-        body.innerHTML += row("بعد الخصم", fix(details.wAfter));
-        body.innerHTML += `<hr style="margin:10px 0; border:0; border-top:1px dashed var(--border-color)">`;
-        body.innerHTML += `<h4>المحفظة المستلمة: ${esc(details.toName)}</h4>`;
-        body.innerHTML += row("قبل الإيداع", fix(details.tBefore));
         body.innerHTML += row("المقبوض", "+"+details.paid, true, true);
-        body.innerHTML += row("بعد الإيداع", fix(details.tAfter));
+        body.innerHTML += row("في محفظة", esc(details.toName));
+        body.innerHTML += row("المبلغ قبل", fix(details.tBefore));
+        body.innerHTML += row("المبلغ بعد", fix(details.tAfter));
+        body.innerHTML += `<hr style="margin:10px 0; border:0; border-top:1px dashed var(--border-color)">`;
+        body.innerHTML += `<b>بيانات التكلفة:</b>`;
+        body.innerHTML += row("تم الخصم سابقاً؟", details.isFirstProfile ? "نعم (أول بروفايل)" : "لا (مدفوع سابقاً)");
+        if(details.isFirstProfile) {
+            body.innerHTML += row("قيمة التكلفة", details.costVal);
+            body.innerHTML += row("استرداد للمتجر", "تمت إضافة قيمة التكلفة لرأس المال");
+        }
     } else if (details.type === 'withdraw') {
         body.innerHTML += row("العملية", "سحب أرباح");
         body.innerHTML += row("الشريك/الجهة", esc(details.person));
@@ -1292,9 +1412,16 @@ function showModalDetails(details) {
              body.innerHTML += row("الخدمة الملغاة", esc(details.data.sub));
              body.innerHTML += row("العميل", esc(details.data.customer));
              body.innerHTML += `<hr style="margin:10px 0; border:0; border-top:1px dashed var(--border-color)">`;
-             body.innerHTML += row(`استرجاع تكلفة (${esc(details.data.fromWallet)})`, "+"+details.data.cost, true, true);
              body.innerHTML += row(`خصم ربح (${esc(details.data.wallet)})`, "-"+details.data.paid, true, false);
         }
+    } else if (details.type === 'stock_add') {
+        body.innerHTML += row("العملية", "شراء مخزون");
+        body.innerHTML += row("الخدمة", esc(details.item));
+        body.innerHTML += row("التكلفة", details.cost + " (" + details.currency + ")", true, false);
+        body.innerHTML += row("محفظة الدفع", esc(details.wallet));
+        body.innerHTML += row("الرصيد قبل", fix(details.wBefore));
+        body.innerHTML += row("الرصيد بعد", fix(details.wAfter));
+        body.innerHTML += `<br><small>تم خصم التكلفة أيضاً من رأس مال المتجر</small>`;
     } else {
         body.innerHTML += `<p>${esc(JSON.stringify(details))}</p>`;
     }
@@ -1367,10 +1494,11 @@ function init(){
     if(!store.invest) store.invest = JSON.stringify({ahmad:{d:0,s:0},mohamed:{d:0,s:0},store:{d:0,s:0}}); fbSave("invest", {ahmad:{d:0,s:0},mohamed:{d:0,s:0},store:{d:0,s:0}});
     if(!store.generalNotes) store.generalNotes = "[]"; fbSave("generalNotes", []);
     if(!store.todoList) store.todoList = "[]"; fbSave("todoList", []);
-    if(!store.settings) store.settings = JSON.stringify({ahmad: 35, mohamed: 35, store: 30, deductCost: true, exchangeRate: 0, logsVis: 'all'}); fbSave("settings", {ahmad: 35, mohamed: 35, store: 30, deductCost: true, exchangeRate: 0, logsVis: 'all'});
+    if(!store.settings) store.settings = JSON.stringify({ahmad: 35, mohamed: 35, store: 30, deductCost: true, exchangeRate: 0, logsVis: 'all', discountEnabled:true, discountChance:25, discountMin:10, discountMax:20, validityMin:15, validityMax:45}); fbSave("settings", {ahmad: 35, mohamed: 35, store: 30, deductCost: true, exchangeRate: 0, logsVis: 'all', discountEnabled:true, discountChance:25, discountMin:10, discountMax:20, validityMin:15, validityMax:45});
     if(!store.activityLog) store.activityLog = "[]"; fbSave("activityLog", []);
     if(!store.stock) store.stock = "[]"; fbSave("stock", []);
     if(!store.services) store.services = "[]"; fbSave("services", []);
+    if(!store.discounts) store.discounts = "[]"; fbSave("discounts", []);
 
     if(localStorage.getItem("darkMode") === "true") {
         document.body.classList.add("dark-mode");
@@ -1394,7 +1522,7 @@ function init(){
 function updateStorageUI() {
     // 1. حساب عدد السجلات (Records Count)
     let totalRecords = 0;
-    ["purchases","activityLog","stock","users","todoList","generalNotes"].forEach(k => {
+    ["purchases","activityLog","stock","users","todoList","generalNotes","discounts"].forEach(k => {
         let arr = safeJSON(store[k], []);
         if(Array.isArray(arr)) totalRecords += arr.length;
         else totalRecords += Object.keys(arr).length;
@@ -1421,7 +1549,8 @@ function updateStorageUI() {
         todoList: store.todoList,
         activityLog: store.activityLog,
         stock: store.stock,
-        services: store.services
+        services: store.services,
+        discounts: store.discounts
     });
 
     let sizeInBytes = new Blob([dataString]).size; 
@@ -1517,8 +1646,9 @@ async function attemptLogin() {
 function checkExpiringOnLogin() {
     let p = safeJSON(store.purchases, []);
     let now = new Date().getTime(), days3 = 3 * 86400000;
-    let expiringCount = p.filter(x => x.expiry && !x.expiryDismissed && (x.expiry - now < days3 && x.expiry - now > -2592000000)).length;
-    if(expiringCount > 0) notify(`يوجد ${expiringCount} اشتراك ينتهي قريباً`, "warning");
+    // Updated: Only count non-reminded, non-compensation items
+    let expiringCount = p.filter(x => x.expiry && !x.expiryDismissed && !x.reminded && !x.isComp && (x.expiry - now < days3 && x.expiry - now > -2592000000)).length;
+    if(expiringCount > 0) notify(`يوجد ${expiringCount} اشتراك ينتهي قريباً (غير منبه)`, "warning");
 }
 
 function getOS() {
@@ -1554,6 +1684,7 @@ function applyRBAC() {
     document.getElementById("sec-manage-wallets").classList.add("hidden");
     document.getElementById("sec-rename-wallet").classList.add("hidden");
     document.getElementById("sec-profit-settings").classList.add("hidden");
+    document.getElementById("sec-discount-settings").classList.add("hidden");
     document.getElementById("todoSection").classList.add("hidden");
     document.getElementById("todoInputArea").classList.add("hidden");
     document.getElementById("btnAddStock").classList.add("hidden");
@@ -1562,6 +1693,8 @@ function applyRBAC() {
     document.getElementById("btnSettings").classList.remove("hidden");
     document.getElementById("btnClearLogs").classList.add("hidden");
     document.getElementById("btnVisLogs").classList.add("hidden");
+    
+    document.getElementById("btnDeleteAllDiscounts").classList.add("hidden");
 
     let settings = safeJSON(store.settings, {});
     let logsVis = settings.logsVis || 'all';
@@ -1581,6 +1714,7 @@ function applyRBAC() {
         document.getElementById("sec-manage-wallets").classList.remove("hidden");
         document.getElementById("sec-rename-wallet").classList.remove("hidden");
         document.getElementById("sec-profit-settings").classList.remove("hidden");
+        document.getElementById("sec-discount-settings").classList.remove("hidden");
         document.getElementById("sec-manage-services").classList.remove("hidden");
         
         document.getElementById("todoSection").classList.remove("hidden");
@@ -1591,6 +1725,8 @@ function applyRBAC() {
         document.getElementById("btnUndo").classList.remove("hidden");
         document.getElementById("btnClearHistory").classList.remove("hidden");
         document.getElementById("btnHideExpired").classList.remove("hidden");
+        
+        document.getElementById("btnDeleteAllDiscounts").classList.remove("hidden");
     } 
     else if (role === 'employee') {
         if(logsVis !== 'no_employee' && logsVis !== 'admin_only') {
@@ -1822,11 +1958,12 @@ function showPage(id, btn){
     if(id === 'history') refreshHistory();
     if(id === 'wallets') refreshWallets();
     if(id === 'expiring') refreshExpiring();
+    if(id === 'discounts') refreshDiscounts();
     if(id === 'analytics') refreshAnalytics();
     if(id === 'security') renderUsersTable();
     if(id === 'logs') refreshLogs();
     if(id === 'stock') refreshStock();
-    if(id === 'modify') { refreshTodoList(); renderServicesSettings(); updateStorageUI(); }
+    if(id === 'modify') { refreshTodoList(); renderServicesSettings(); updateStorageUI(); loadProfitSettings(); }
 }
 
 function toggleSidebar() {
@@ -1863,11 +2000,12 @@ function _processNotifyQueue() {
 
 function loadWallets(){
     let wallets=safeJSON(store.wallets, {});
-    const selects = [window.wallet, window.modWallet, window.fromWallet, window.renameWalletSelect, window.tfFromWallet, window.tfToWallet, window.wWalletAhmad, window.wWalletMohamed, window.wWalletStore];
+    const selects = [window.wallet, window.stWallet, window.modWallet, window.renameWalletSelect, window.tfFromWallet, window.tfToWallet, window.wWalletAhmad, window.wWalletMohamed, window.wWalletStore];
     selects.forEach(s => { 
         if(s) { 
             s.innerHTML = s.id.startsWith("wWallet") ? '<option value="">اختر محفظة السحب</option>' : ""; 
-            Object.keys(wallets).forEach(w=>{ 
+            // الترتيب الأبجدي للمحافظ
+            Object.keys(wallets).sort((a,b) => a.localeCompare(b, 'ar')).forEach(w=>{ 
                 let o=document.createElement("option"); 
                 o.value=w; o.text=w + ` (${wallets[w].cur})`; 
                 s.appendChild(o); 
@@ -1896,10 +2034,33 @@ function loadPurchaseStock() {
         selPurchase.innerHTML = html;
     }
 }
+
+// دالة جديدة لتزامن المدة تلقائياً عند اختيار خدمة من المخزون
+function syncPurchaseDuration() {
+    let stockId = document.getElementById("sub").value;
+    let durDropdown = document.getElementById("subDuration");
+    if (!stockId) {
+        durDropdown.value = "1"; // الافتراضي
+        return;
+    }
+    let stockList = safeJSON(store.stock, []);
+    let stItem = stockList.find(x => x.id === stockId);
+    if (stItem && stItem.duration !== undefined) {
+        durDropdown.value = stItem.duration; // تحديث القائمة المنسدلة بناءً على مدة المخزون الأصلية
+    }
+}
+
 function loadProfitSettings(){
     let s = safeJSON(store.settings, {});
     setAhmadProp.value = s.ahmad; setMohamedProp.value = s.mohamed; setStoreProp.value = s.store;
     setDeductCost.checked = s.deductCost; setExchangeRate.value = s.exchangeRate || 0;
+    
+    document.getElementById("setDiscountEnabled").checked = s.discountEnabled !== false;
+    document.getElementById("setDiscountChance").value = s.discountChance ?? 25;
+    document.getElementById("setDiscountMin").value = s.discountMin ?? 10;
+    document.getElementById("setDiscountMax").value = s.discountMax ?? 20;
+    document.getElementById("setValidityMin").value = s.validityMin ?? 15;
+    document.getElementById("setValidityMax").value = s.validityMax ?? 45;
 }
 function saveProfitSettings(){
     let a = +setAhmadProp.value, m = +setMohamedProp.value, s = +setStoreProp.value;
@@ -1910,109 +2071,172 @@ function saveProfitSettings(){
     logAction("تعديل إعدادات توزيع الأرباح");
      notify("تم الحفظ");
 }
+
+function saveDiscountSettings(){
+    if(currentUser.role !== 'admin') return notify("للأدمن فقط","error");
+    let sObj = safeJSON(store.settings, {});
+    sObj.discountEnabled = document.getElementById("setDiscountEnabled").checked;
+    sObj.discountChance = +document.getElementById("setDiscountChance").value || 0;
+    sObj.discountMin = +document.getElementById("setDiscountMin").value || 0;
+    sObj.discountMax = +document.getElementById("setDiscountMax").value || 0;
+    sObj.validityMin = +document.getElementById("setValidityMin").value || 0;
+    sObj.validityMax = +document.getElementById("setValidityMax").value || 0;
+    
+    store.settings = JSON.stringify(sObj); fbSave("settings", sObj);
+    logAction("تعديل إعدادات أكواد الخصم");
+    notify("تم حفظ إعدادات الخصم");
+}
+
 function validatePhoneInput(el) {
     let v = el.value.trim();
     if(!v) { el.style.borderColor = ""; return; }
     el.style.borderColor = "var(--success)";
 }
 
+// --- NEW PURCHASE LOGIC ---
 function addPurchase(){
     if(currentUser.role === 'viewer' || currentUser.role === 'viewer_plus') return;
     
     let paid = parseFloat(paidAmount.value);
-    let cost = parseFloat(costAmount.value);
     
-    if(isNaN(paid) || isNaN(cost) || paid < 0 || cost < 0) { 
-        notify("يرجى إدخال مبالغ صحيحة وموجبة", "error"); 
+    if(isNaN(paid) || paid < 0) { 
+        notify("يرجى إدخال المبلغ المقبوض", "error"); 
         return; 
     }
     
     let stockId = sub.value;
     if(!stockId) { notify("يرجى اختيار الاشتراك من المخزون","error"); return; }
+    
     let stockList = safeJSON(store.stock, []);
     let stItem = stockList.find(x => x.id === stockId);
     if(!stItem || stItem.status !== 'active') { notify("هذا الاشتراك لم يعد متاحاً","error"); return; }
     
-    let paidCur=paidCurrency.value, costCur=costCurrency.value;
-    let from=fromWallet.value, duration = +subDuration.value;
-    let settings=safeJSON(store.settings, {});
-    let walletsTmp=safeJSON(store.wallets, {});
+    let paidCur = paidCurrency.value;
+    let duration = parseInt(stItem.duration) || 0; // التعديل: قراءة المدة مباشرة من المخزون
+    let settings = safeJSON(store.settings, {});
+    let rate = settings.exchangeRate && settings.exchangeRate > 0 ? settings.exchangeRate : 1;
     
-    if(walletsTmp[from].bal < cost && walletsTmp[from].cur == costCur){ notify("رصيد غير كافي","error"); return; }
+    let discountCodeInput = document.getElementById("discountCodeInput").value.trim();
+    let appliedDiscountPct = 0;
+    let isComp = document.getElementById("isCompensation").checked;
+
+    if (discountCodeInput) {
+        if(isComp) {
+            return notify("لا يمكن استخدام كود خصم في عملية تعويض", "error");
+        }
+        let discountsList = safeJSON(store.discounts, []);
+        let dObj = discountsList.find(x => x.code === discountCodeInput);
+        if (!dObj || new Date().getTime() > dObj.expiry) {
+            return notify("عذراً، كود الخصم غير متوفر أو منتهي الصلاحية", "error");
+        }
+        appliedDiscountPct = dObj.percentage;
+    }
+
+    // Determine Cost Logic
+    let isFirstProfile = (stItem.soldProfiles || 0) === 0;
+    let originalCost = stItem.cost || 0;
+    let originalCostCur = stItem.costCurrency || '₪';
     
-    let rate = settings.exchangeRate && settings.exchangeRate > 0 ? settings.exchangeRate : 0;
-    if(paidCur !== costCur && rate === 0) {
-        notify("عملتا الدفع والتكلفة مختلفتان. يرجى تعيين سعر الصرف في الإعدادات أولاً.", "error");
-        return;
+    let calculatedCost = 0;
+    
+    if (isFirstProfile && !isComp) {
+        if (paidCur === originalCostCur) {
+            calculatedCost = originalCost;
+        } else {
+            // Convert Cost to Paid Currency
+            if (paidCur === '$' && originalCostCur === '₪') {
+                calculatedCost = originalCost / rate;
+            } else if (paidCur === '₪' && originalCostCur === '$') {
+                calculatedCost = originalCost * rate;
+            }
+        }
+    } else {
+        calculatedCost = 0;
     }
     
-    let profit = settings.deductCost 
-        ? (paidCur === costCur ? paid - cost : (paidCur === '$' ? paid - cost/rate : paid - cost*rate))
-        : paid;
-    let profitStr = `${fix(profit)} ${paidCur}`;
-    
+    // Profit Calculation Logic
+    let netProfit = paid; // Default
+    let storeRecoup = 0;
+
+    if (settings.deductCost && isFirstProfile && !isComp) {
+        storeRecoup = calculatedCost;
+        netProfit = paid - calculatedCost;
+        // Note: If netProfit is negative, Store Capital bears it (logic in execute)
+    }
+
     let cleanName = stItem.service + ((stItem.totalProfiles || 1) > 1 ? " Shared" : "");
 
     document.getElementById("purchaseConfirmBody").innerHTML = `
         <div style="display:grid; gap:8px;">
             <div><i class="fas fa-tag"></i> <b>الخدمة:</b> ${esc(cleanName)}</div>
             <div><i class="fas fa-user"></i> <b>العميل:</b> ${esc(customer.value)||'—'} ${customerPhone.value?'('+esc(customerPhone.value)+')':''}</div>
-            <div><i class="fas fa-calendar"></i> <b>المدة:</b> ${duration} شهر</div>
+            <div><i class="fas fa-calendar"></i> <b>المدة:</b> ${duration === 0 ? 'بدون مدة' : duration + ' شهر'}</div>
             <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border-color)">
-                <span style="color:var(--success)"><i class="fas fa-money-bill-wave"></i> مدفوع: ${paid}${paidCur}</span> &nbsp;|&nbsp;
-                <span style="color:var(--danger)"><i class="fas fa-hand-holding-usd"></i> تكلفة: ${cost}${costCur}</span>
+                <span style="color:var(--success)"><i class="fas fa-money-bill-wave"></i> مدفوع: ${paid}${paidCur}</span>
             </div>
-            <div><i class="fas fa-chart-line"></i> <b>صافي الربح تقريباً:</b> <b style="color:var(--primary)">${profitStr}</b></div>
-            <div style="font-size:12px; margin-top:6px; color:var(--text-muted)"><i class="fas fa-arrow-left"></i> من: ${esc(from)} &nbsp;|&nbsp; <i class="fas fa-arrow-right"></i> إلى: ${esc(wallet.value)}</div>
+            ${isComp ? `<div style="color:var(--danger); font-weight:bold; padding:5px; background:var(--yellow-bg); border-radius:5px;"><i class="fas fa-exclamation-circle"></i> هذه العملية مسجلة كـ "تعويض"</div>` : ''}
+            ${appliedDiscountPct > 0 ? `<div style="color:var(--success); font-weight:bold; padding:5px; background:#dcfce7; border-radius:5px;"><i class="fas fa-ticket-alt"></i> تم تطبيق كود خصم: ${appliedDiscountPct}%</div>` : ''}
+            <div><i class="fas fa-info-circle"></i> <b>حالة التكلفة:</b> ${isFirstProfile ? `<span style="color:var(--danger)">أول بروفايل (سيتم خصم ${fix(calculatedCost)} ${paidCur})</span>` : '<span style="color:var(--success)">مدفوعة سابقاً (التكلفة 0)</span>'}</div>
+            <div style="font-size:12px; margin-top:6px; color:var(--text-muted)"><i class="fas fa-arrow-right"></i> إيداع في: ${esc(wallet.value)}</div>
         </div>`;
     
     document.getElementById("purchaseConfirmModal").style.display = "flex";
     document.getElementById("purchaseConfirmOkBtn").onclick = () => {
         document.getElementById("purchaseConfirmModal").style.display = "none";
-        _executePurchase(paid, cost, paidCur, costCur, from, duration, rate, settings, stItem, cleanName);
+        _executePurchase(paid, paidCur, duration, settings, stItem, cleanName, calculatedCost, isFirstProfile, rate, discountCodeInput, appliedDiscountPct, isComp);
     };
 }
 
-function _executePurchase(paid, cost, paidCur, costCur, from, duration, rate, settings, stItem, cleanName) {
-    let wallets=safeJSON(store.wallets, {}), invest=safeJSON(store.invest, {}), purchases=safeJSON(store.purchases, []);
+function _executePurchase(paid, paidCur, duration, settings, stItem, cleanName, calculatedCost, isFirstProfile, rate, discountCodeInput, appliedDiscountPct, isComp) {
+    let wallets = safeJSON(store.wallets, {}), invest = safeJSON(store.invest, {}), purchases = safeJSON(store.purchases, []);
     
-    let wBefore = wallets[from].bal;
     let tBefore = wallets[wallet.value].bal;
     let invest_before_profit = JSON.parse(JSON.stringify(invest));
     
-    wallets[from].bal -= cost;
-    
-    if(costCur === '$') {
-        if(invest.store.d >= cost) invest.store.d -= cost;
-        else { let rem = cost - invest.store.d; invest.store.d = 0; invest.store.s -= (rem * rate); }
-    } else {
-        if(invest.store.s >= cost) invest.store.s -= cost;
-        else { let rem = cost - invest.store.s; invest.store.s = 0; if(rate > 0) invest.store.d -= (rem / rate); }
-    }
-    
-    let profitBase = paid, costInPaidCurrency = 0;
-    if(settings.deductCost) {
-        if(paidCur === costCur) { profitBase = paid - cost; costInPaidCurrency = cost; }
-        else { let costCv = (paidCur === '$') ? cost/rate : cost*rate; profitBase = paid - costCv; costInPaidCurrency = costCv; }
-    }
-    
-    let aP = +(profitBase * (settings.ahmad/100)).toFixed(2);
-    let mP = +(profitBase * (settings.mohamed/100)).toFixed(2);
-    let sP = +(profitBase * (settings.store/100)).toFixed(2);
-    
-    if(paidCur === '$') {
-        invest.ahmad.d += aP; invest.mohamed.d += mP; invest.store.d += sP;
-        if(settings.deductCost) invest.store.d += costInPaidCurrency;
-    } else {
-        invest.ahmad.s += aP; invest.mohamed.s += mP; invest.store.s += sP;
-        if(settings.deductCost) invest.store.s += costInPaidCurrency;
-    }
-    
+    // Add Paid Amount to Wallet
     wallets[wallet.value].bal += paid;
     
-    let d = new Date(), exp = new Date(d);
-    exp.setMonth(exp.getMonth() + duration);
-    if(exp.getDate() !== d.getDate()) exp.setDate(0);
+    // --- Distribution Logic ---
+    let distributableProfit = paid;
+    let recoupAmount = 0;
+
+    if (settings.deductCost && isFirstProfile && !isComp) {
+        recoupAmount = calculatedCost; // This amount goes back to Store Capital
+        distributableProfit = paid - calculatedCost;
+    }
+
+    // Determine share type based on Paid Currency
+    let shareType = (paidCur === '$') ? 'd' : 's';
+
+    // 1. Return Cost to Store Capital (if applicable)
+    invest.store[shareType] += recoupAmount;
+
+    // 2. Distribute Profit (or Loss)
+    if (distributableProfit >= 0) {
+        // Normal Profit Distribution
+        let aP = +(distributableProfit * (settings.ahmad/100)).toFixed(2);
+        let mP = +(distributableProfit * (settings.mohamed/100)).toFixed(2);
+        let sP = +(distributableProfit * (settings.store/100)).toFixed(2);
+        
+        invest.ahmad[shareType] += aP;
+        invest.mohamed[shareType] += mP;
+        invest.store[shareType] += sP;
+    } else {
+        // Negative Profit (Loss) - Store bears it all
+        // distributableProfit is negative here, so we just ADD it to store (effectively subtracting)
+        invest.store[shareType] += distributableProfit; 
+        // Ahmad and Mohamed get 0 change
+    }
+    
+    // Update Stock Info
+    // التعديل: حساب تاريخ الانتهاء بناءً على تاريخ إضافة المخزون
+    let d = new Date(stItem.timestamp || Date.now()), exp = null;
+    if (duration > 0) {
+        exp = new Date(d);
+        exp.setMonth(exp.getMonth() + duration);
+        // ضبط التاريخ لتجنب مشاكل الأشهر القصيرة
+        if(exp.getDate() !== d.getDate()) exp.setDate(0);
+    }
     
     let buyerInfo = (customer.value ? customer.value : "عميل") + (customerPhone.value ? ` - ${customerPhone.value}` : "");
     if(!stItem.buyers) stItem.buyers = [];
@@ -2030,18 +2254,18 @@ function _executePurchase(paid, cost, paidCur, costCur, from, duration, rate, se
 
     purchases.push({
         id: Date.now() + '_' + Math.random().toString(36).substr(2,5),
-        date: d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(),
+        date: new Date().getFullYear()+'-'+(new Date().getMonth()+1)+'-'+new Date().getDate(),
         customer: customer.value||"عميل",
         phone: customerPhone.value||"-",
         sub: cleanName,
         stockId: stItem.id,
         duration: duration,
         paid: paid+paidCur,
-        cost: cost+costCur,
+        cost: isFirstProfile ? ((stItem.cost || 0) + (stItem.costCurrency || "₪")) : ("0" + (stItem.costCurrency || "₪")), // Show original cost currency
         wallet: wallet.value,
-        fromWallet: from,
-        expiry: exp.getTime(),
-        investSnapshot: invest_before_profit
+        expiry: exp ? exp.getTime() : null,
+        investSnapshot: invest_before_profit,
+        isComp: isComp
     });
     
     store.wallets = JSON.stringify(wallets); fbSave("wallets", wallets);
@@ -2052,16 +2276,96 @@ function _executePurchase(paid, cost, paidCur, costCur, from, duration, rate, se
         type: 'purchase',
         customer: customer.value||"عميل",
         sub: cleanName,
-        cost: cost+costCur, paid: paid+paidCur,
-        wName: from, wBefore: wBefore, wAfter: wallets[from].bal,
-        toName: wallet.value, tBefore: tBefore, tAfter: wallets[wallet.value].bal
+        paid: paid+paidCur,
+        costVal: isFirstProfile ? ((stItem.cost || 0) + (stItem.costCurrency || "₪")) : "0",
+        isFirstProfile: isFirstProfile,
+        toName: wallet.value, tBefore: tBefore, tAfter: wallets[wallet.value].bal,
+        appliedDiscountPct: appliedDiscountPct,
+        isComp: isComp
     });
+
+    // DISCOUNT SYSTEM LOGIC:
+    // 1. Remove used coupon
+    if (appliedDiscountPct > 0) {
+        let dList = safeJSON(store.discounts, []);
+        dList = dList.filter(x => x.code !== discountCodeInput);
+        store.discounts = JSON.stringify(dList);
+        fbSave("discounts", dList);
+    }
+
+    // 2. Generate new coupon randomly
+    let dEnabled = settings.discountEnabled !== false;
+    let dChance = settings.discountChance !== undefined ? settings.discountChance : 25;
+    
+    if (dEnabled && !isComp && paid > 0 && appliedDiscountPct === 0) {
+        let rand = Math.random() * 100;
+        if (rand <= dChance) {
+            let dMin = settings.discountMin !== undefined ? settings.discountMin : 10;
+            let dMax = settings.discountMax !== undefined ? settings.discountMax : 20;
+            let vMin = settings.validityMin !== undefined ? settings.validityMin : 15;
+            let vMax = settings.validityMax !== undefined ? settings.validityMax : 45;
+
+            let code = Math.floor(100000000 + Math.random() * 900000000).toString();
+            let pct = Math.floor(Math.random() * (dMax - dMin + 1)) + dMin;
+            let days = Math.floor(Math.random() * (vMax - vMin + 1)) + vMin;
+            let expTime = new Date().getTime() + (days * 86400000);
+
+            let generatedCoupon = {
+                id: Date.now().toString(),
+                code: code,
+                customer: customer.value || "عميل",
+                service: cleanName,
+                percentage: pct,
+                expiry: expTime,
+                days: days
+            };
+
+            let dList = safeJSON(store.discounts, []);
+            dList.unshift(generatedCoupon);
+            store.discounts = JSON.stringify(dList);
+            fbSave("discounts", dList);
+
+            showCouponModal(generatedCoupon, customerPhone.value);
+        }
+    }
     
     currentPage.history = 1;
     loadPurchaseStock();
     refreshAll();  notify("تمت العملية بنجاح");
-    paidAmount.value=""; costAmount.value=""; customer.value=""; sub.value=""; customerPhone.value=""; subDuration.value="1";
+    
+    // Reset Form
+    paidAmount.value=""; customer.value=""; sub.value=""; customerPhone.value=""; 
+    document.getElementById("subDuration").value="1";
+    document.getElementById("discountCodeInput").value="";
+    document.getElementById("isCompensation").checked = false;
 }
+
+function showCouponModal(coupon, phone) {
+    document.getElementById("couponModalMsg").textContent = `تم توليد كود خصم للعميل ${coupon.customer} بنجاح.`;
+    document.getElementById("couponModalCode").textContent = coupon.code;
+    document.getElementById("couponModalPct").textContent = `خصم بقيمة ${coupon.percentage}%`;
+    document.getElementById("couponModalDays").textContent = `صالح لمدة ${coupon.days} يوم`;
+    document.getElementById("couponModalQuestion").textContent = `حصل العميل "${coupon.customer}" على كود خصم، هل تود إخباره؟`;
+
+    // تمت إزالة الإيموجي من هنا
+    let msg = `مرحباً ${coupon.customer}\nحصلت على كود خصم ${coupon.percentage}% على أي خدمة بتختارها من خدماتنا\nصلاحية كود الخصم: ${coupon.days} يوم\nكود الخصم: ${coupon.code}`;
+    
+    let cleanPhone = (phone || '').replace(/\D/g, '');
+    if (cleanPhone.startsWith('0')) cleanPhone = '970' + cleanPhone.substring(1);
+    
+    let waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
+    let waBtn = document.getElementById("couponWhatsAppBtn");
+    waBtn.href = waLink;
+    if (!cleanPhone) {
+        waBtn.style.display = "none";
+    } else {
+        waBtn.style.display = "flex";
+        waBtn.onclick = () => { document.getElementById('couponModal').style.display='none'; };
+    }
+
+    document.getElementById("couponModal").style.display = "flex";
+}
+
 function refreshAll(){
     refreshWallets();
     let p = safeJSON(store.purchases, []);
@@ -2075,7 +2379,8 @@ function refreshAll(){
     }
     
     let days3 = 3 * 86400000, nowMs = now.getTime();
-    let expiringCount = p.filter(x => x.expiry && !x.expiryDismissed && (x.expiry - nowMs < days3 && x.expiry - nowMs > -2592000000)).length;
+    // Updated: Only count non-reminded, non-compensation items for the badge
+    let expiringCount = p.filter(x => x.expiry && !x.expiryDismissed && !x.reminded && !x.isComp && (x.expiry - nowMs < days3 && x.expiry - nowMs > -2592000000)).length;
     let badge = document.getElementById("expiryBadge");
     if(badge) { badge.textContent = expiringCount; badge.style.display = expiringCount > 0 ? "inline-flex" : "none"; }
     
@@ -2087,7 +2392,8 @@ function refreshAll(){
         'analytics': refreshAnalytics,
         'logs': refreshLogs,
         'stock': refreshStock,
-        'modify': () => { refreshTodoList(); renderServicesSettings(); updateStorageUI(); }
+        'discounts': refreshDiscounts,
+        'modify': () => { refreshTodoList(); renderServicesSettings(); updateStorageUI(); loadProfitSettings(); }
     };
     
     refreshInvestment();
@@ -2101,14 +2407,81 @@ function refreshAll(){
     if(!document.getElementById("history").classList.contains("hidden")) refreshHistory();
     if(!document.getElementById("generalNotes").classList.contains("hidden")) refreshGeneralNotes();
     if(!document.getElementById("stock").classList.contains("hidden")) refreshStock();
+    if(!document.getElementById("discounts").classList.contains("hidden")) refreshDiscounts();
 }
+
+function refreshDiscounts() {
+    let list = safeJSON(store.discounts, []);
+    let search = document.getElementById("discountSearch").value.toLowerCase();
+    
+    let filtered = list.filter(item => {
+        return !search || item.customer.toLowerCase().includes(search) || item.code.includes(search);
+    });
+
+    renderPagination(filtered.length, 'discounts', refreshDiscounts, 'discountsPagination');
+    let paginated = filtered.slice((currentPage.discounts - 1) * ITEMS_PER_PAGE, currentPage.discounts * ITEMS_PER_PAGE);
+    
+    let tbody = document.getElementById("discountsBody");
+    let rows = "";
+    let now = new Date().getTime();
+    let isAdmin = currentUser && currentUser.role === 'admin';
+    let isViewer = currentUser && currentUser.role === 'viewer'; // Check for regular viewer
+
+    paginated.forEach(item => {
+        let daysLeft = Math.ceil((item.expiry - now) / 86400000);
+        let timeBadge = daysLeft > 0 ? `<span class="badge badge-success">${daysLeft} يوم</span>` : `<span class="badge badge-danger">منتهي</span>`;
+        
+        let delBtn = isAdmin ? `<button class="btn btn-danger" style="padding:5px 10px" onclick="deleteSingleDiscount('${item.code}')"><i class="fas fa-trash-alt"></i></button>` : '-';
+        
+        // Hide actual code from "viewer"
+        let displayCode = isViewer ? '*********' : item.code;
+        
+        rows += `<tr>
+            <td style="font-weight:bold; color:var(--primary); letter-spacing:1px; text-align:center;">${displayCode}</td>
+            <td style="text-align:center;">${esc(item.customer)}</td>
+            <td style="text-align:center; font-weight:bold;">${item.percentage}%</td>
+            <td style="text-align:center;">${timeBadge}</td>
+            <td style="text-align:center;">${delBtn}</td>
+        </tr>`;
+    });
+    tbody.innerHTML = rows || `<tr><td colspan='5' style='text-align:center; padding:20px; color:var(--text-muted)'>لا توجد أكواد خصم</td></tr>`;
+}
+
+async function deleteSingleDiscount(code) {
+    let ok = await showConfirm("حذف الكود", "هل تريد حذف كود الخصم هذا نهائياً؟", "حذف", "إلغاء", '<i class="fas fa-trash-alt"></i>');
+    if(!ok) return;
+    
+    let dList = safeJSON(store.discounts, []);
+    dList = dList.filter(x => x.code !== code);
+    store.discounts = JSON.stringify(dList);
+    fbSave("discounts", dList);
+    
+    logAction(`قام الأدمن بحذف كود خصم يدوياً`);
+    refreshDiscounts();
+    notify("تم حذف الكود");
+}
+
+async function deleteAllDiscounts() {
+    if(currentUser.role !== 'admin') return;
+    let ok = await showConfirm("حذف جميع الأكواد", "هل أنت متأكد من مسح كافة أكواد الخصم من النظام نهائياً؟", "مسح الكل", "إلغاء", '<i class="fas fa-exclamation-triangle"></i>');
+    if(!ok) return;
+    
+    store.discounts = "[]";
+    fbSave("discounts", []);
+    logAction("قام الأدمن بمسح جميع أكواد الخصم");
+    currentPage.discounts = 1;
+    refreshDiscounts();
+    notify("تم مسح جميع الأكواد");
+}
+
 function refreshExpiring() {
     let p = safeJSON(store.purchases, []);
     let body = document.getElementById("expiringBody"); 
     if(!body) return;
     let now = new Date().getTime(), days3 = 3 * 86400000;
     
-    let filtered = p.map((d, i) => ({ d, i })).filter(x => x.d.expiry && !x.d.expiryDismissed && (x.d.expiry - now < days3 && x.d.expiry - now > -2592000000));
+    // Updated: Exclude compensation items from expiring lists entirely
+    let filtered = p.map((d, i) => ({ d, i })).filter(x => x.d.expiry && !x.d.expiryDismissed && !x.d.isComp && (x.d.expiry - now < days3 && x.d.expiry - now > -2592000000));
     filtered.sort((a, b) => a.d.expiry - b.d.expiry);
     
     renderPagination(filtered.length, 'expiring', refreshExpiring, 'expiringPagination');
@@ -2118,12 +2491,23 @@ function refreshExpiring() {
     let isViewer = currentUser ? (currentUser.role === 'viewer' || currentUser.role === 'viewer_plus') : true;
     
     let rows = "";
+    
+    // التعديل هنا: تحديد الوقت لجلب التحية المناسبة
+    let currentHour = new Date().getHours();
+    let greeting = currentHour < 12 ? 'صباح الخير' : 'مساء الخير';
+
     paginated.forEach(x => {
         let item = x.d, daysLeft = Math.ceil((item.expiry - now) / 86400000);
         let status = daysLeft <= 0 ? 'منتهي' : daysLeft + ' يوم';
         let cleanPhone = (item.phone||'').replace(/\D/g, '');
         if(cleanPhone.startsWith('0')) cleanPhone = '970' + cleanPhone.substring(1);
-        let wa = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(`السلام عليكم ${item.customer}، نود تذكيركم بانتهاء اشتراك ${item.sub} بعد ${status}. للتجديد يرجى التواصل معنا.`)}`;
+        
+        // رسالة التنبيه الجديدة
+        let expiryPhrase = daysLeft <= 0 ? 'منتهي' : `باقي على إنتهائه ${status}`;
+        let waMsg = `${greeting} ${item.customer}\nحابين نذكرك ان اشتراكك في ${item.sub} ${expiryPhrase}\nهل عجبتك الخدمة و حابب تجدد اشتراكك مرة تانية؟`;
+        
+        let wa = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMsg)}`;
+        
         let btnHTML = isViewer ? '' : `<a href="${wa}" target="_blank" onclick="markAsReminded(${x.i})" class="btn btn-whatsapp"><i class="fab fa-whatsapp"></i> تذكير</a>`;
         let phoneDisplay = isRestricted ? '----' : esc(item.phone);
         let serviceDisplay = isRestricted ? '----' : `<b>${esc(item.sub)}</b>`;
@@ -2131,8 +2515,10 @@ function refreshExpiring() {
     });
     body.innerHTML = rows || "<tr><td colspan='6' style='text-align:center; padding:30px; color:var(--text-muted)'>لا توجد تنبيهات</td></tr>";
     
+    // Badge Update Logic (Only non-reminded, non-compensation)
+    let nonRemindedCount = filtered.filter(x => !x.d.reminded).length;
     let badge = document.getElementById("expiryBadge");
-    if(badge) { badge.textContent = filtered.length; badge.style.display = filtered.length > 0 ? "inline-flex" : "none"; }
+    if(badge) { badge.textContent = nonRemindedCount; badge.style.display = nonRemindedCount > 0 ? "inline-flex" : "none"; }
 }
 function markAsReminded(i) { let p = safeJSON(store.purchases, []); p[i].reminded = true; store.purchases = JSON.stringify(p); fbSave("purchases", p); refreshExpiring();  }
 async function deleteExpired() { 
@@ -2147,7 +2533,9 @@ function refreshWallets(){
     let w=safeJSON(store.wallets, {}), td=0, ts=0;
     let isRestricted = currentUser ? (currentUser.role === 'viewer') : true;
     let rows="";
-    for(let k in w){
+    // الترتيب الأبجدي للمحافظ في الجدول
+    let sortedKeys = Object.keys(w).sort((a,b) => a.localeCompare(b, 'ar'));
+    for(let k of sortedKeys){
         let act = w[k].active !== false;
         let balDisplay = isRestricted ? '****' : fix(w[k].bal);
         rows+=`<tr><td><b>${esc(k)}</b></td><td><span class="badge ${w[k].cur=='$'?'badge-success':'badge-info'}">${w[k].cur}</span></td><td style="text-align:center; font-weight:800">${balDisplay}</td><td>${act?'<i class="fas fa-check-circle" style="color:var(--success)"></i>':'<i class="fas fa-times-circle" style="color:var(--danger)"></i>'}</td></tr>`;
@@ -2177,7 +2565,15 @@ function refreshHistory(){
         let paidD = isRestricted ? '----' : esc(item.paid);
         let costD = isRestricted ? '----' : esc(item.cost);
         let walletD = isRestricted ? '----' : esc(item.wallet);
-        rows+=`<tr><td>${item.date}</td><td><b>${esc(item.customer)}</b></td><td>${phoneD}</td><td>${subD}</td><td>${item.duration||'-'} شهر</td><td style="color:var(--success)">${paidD}</td><td style="color:var(--danger)">${costD}</td><td>${walletD}</td></tr>`;
+        
+        // --- التعديل هنا: تلوين التعويض بالأحمر ---
+        let colorStyle = item.isComp ? "color:var(--danger);" : "";
+        
+        let parsedDur = parseInt(item.duration);
+        let durStr = (parsedDur === 0) ? "بدون مدة" : (isNaN(parsedDur) ? "-" : parsedDur + " شهر");
+        let durBadge = (parsedDur === 0) ? "badge-success" : "badge-warning";
+        
+        rows+=`<tr><td>${item.date}</td><td style="${colorStyle}"><b>${esc(item.customer)}</b></td><td style="${colorStyle}">${phoneD}</td><td>${subD}</td><td><span class="badge ${durBadge}">${durStr}</span></td><td style="color:var(--success)">${paidD}</td><td style="color:var(--danger)">${costD}</td><td>${walletD}</td></tr>`;
     });
     document.getElementById("historyBody").innerHTML = rows || `<tr><td colspan='8' style='text-align:center; padding:20px; color:var(--text-muted)'>لا توجد بيانات</td></tr>`;
 }
@@ -2277,8 +2673,12 @@ async function withdrawPartial(p){
     let currency = wallet.cur;
     let shareType = (currency === '$') ? 'd' : 's';
 
-    if(i[p][shareType] < amount) { notify(`رصيد الحصة (${currency}) غير كافي للسحب`,"error"); return; }
-    if(wallet.bal < amount) { notify(`رصيد المحفظة (${walletName}) غير كافي.`, "error"); return; }
+    // FIX FOR FLOAT COMPARISON
+    let currentShare = Number(i[p][shareType].toFixed(2));
+    let currentWallet = Number(wallet.bal.toFixed(2));
+
+    if(currentShare < amount) { notify(`رصيد الحصة (${currency}) غير كافي للسحب`,"error"); return; }
+    if(currentWallet < amount) { notify(`رصيد المحفظة (${walletName}) غير كافي.`, "error"); return; }
 
     let shareBefore = i[p][shareType];
     let walletBefore = wallet.bal;
@@ -2308,7 +2708,54 @@ async function withdrawPartial(p){
 }
 
 function addNewWallet(){ let n=newWalletName.value.trim(), c=newWalletCurrency.value, w=safeJSON(store.wallets, {}); if(!n||w[n]) return notify("خطأ بالاسم","error"); w[n]={bal:0, cur:c, active:true}; store.wallets = JSON.stringify(w); fbSave("wallets", w); loadWallets(); refreshWallets(); newWalletName.value=""; logAction(`إنشاء محفظة جديدة: ${n}`);  notify("تمت"); }
-function renameWallet(){ let o=renameWalletSelect.value, n=renameWalletInput.value.trim(), w=safeJSON(store.wallets, {}); if(!n||w[n]) return notify("خطأ","error"); w[n]=w[o]; delete w[o]; store.wallets = JSON.stringify(w); fbSave("wallets", w); let p=safeJSON(store.purchases, []); p.forEach(x=>{if(x.wallet===o)x.wallet=n}); store.purchases = JSON.stringify(p); fbSave("purchases", p); loadWallets(); refreshAll(); renameWalletInput.value=""; logAction(`تغيير اسم محفظة من ${o} إلى ${n}`);  notify("تم"); }
+
+function fillWalletEditData() {
+    let name = document.getElementById("renameWalletSelect").value;
+    let w = safeJSON(store.wallets, {});
+    let wallet = w[name];
+    if(wallet) {
+        document.getElementById("renameWalletInput").value = name;
+        document.getElementById("renameWalletCur").value = wallet.cur;
+        document.getElementById("renameWalletStatus").value = (wallet.active !== false).toString();
+    }
+}
+
+function updateWalletData(){ 
+    let oldName = document.getElementById("renameWalletSelect").value;
+    let newName = document.getElementById("renameWalletInput").value.trim();
+    let newCur = document.getElementById("renameWalletCur").value;
+    let newStatus = document.getElementById("renameWalletStatus").value === "true";
+    
+    let w = safeJSON(store.wallets, {}); 
+    
+    if(!newName) return notify("خطأ في الاسم","error");
+    if(!w[oldName]) return notify("المحفظة غير موجودة", "error");
+
+    // If renaming
+    if(newName !== oldName) {
+        if(w[newName]) return notify("يوجد محفظة بهذا الاسم مسبقاً", "error");
+        w[newName] = w[oldName];
+        delete w[oldName];
+        
+        // Update references in purchase history
+        let p = safeJSON(store.purchases, []); 
+        p.forEach(x => { if(x.wallet === oldName) x.wallet = newName; }); 
+        store.purchases = JSON.stringify(p); fbSave("purchases", p);
+        
+        logAction(`تعديل محفظة: تم تغيير الاسم من ${oldName} إلى ${newName}`);
+    }
+
+    // Update properties
+    w[newName].cur = newCur;
+    w[newName].active = newStatus;
+    
+    store.wallets = JSON.stringify(w); fbSave("wallets", w); 
+    
+    loadWallets(); 
+    refreshAll(); 
+    document.getElementById("renameWalletInput").value = ""; 
+    notify("تم تحديث بيانات المحفظة"); 
+}
 
 function calculateTransfer() {
     let amount = parseFloat(document.getElementById("tfAmount").value) || 0;
@@ -2359,9 +2806,22 @@ function executeTransfer() {
     w[to].bal += result;
 
     let invest = safeJSON(store.invest, {});
-    if(fee > 0) {
-        if(fromCur === '$') invest.store.d -= fee;
-        else invest.store.s -= fee;
+    
+    if(fromCur !== toCur) {
+        // CROSS CURRENCY TRANSFER LOGIC
+        // Store absorbs the exchange: Pay full amount from Store Source -> Get full result to Store Dest
+        let fromType = (fromCur === '$') ? 'd' : 's';
+        let toType = (toCur === '$') ? 'd' : 's';
+        
+        invest.store[fromType] -= amount; 
+        invest.store[toType] += result;
+        
+    } else {
+        // SAME CURRENCY TRANSFER
+        if(fee > 0) {
+            if(fromCur === '$') invest.store.d -= fee;
+            else invest.store.s -= fee;
+        }
     }
 
     store.wallets = JSON.stringify(w); fbSave("wallets", w);
@@ -2420,15 +2880,20 @@ async function setProfitShare() {
 
 async function deleteWallet(){ 
     if(currentUser.role !== 'admin') return notify("للأدمن فقط", "error"); 
-    let ok = await showConfirm("حذف المحفظة", `هل تريد حذف محفظة "${modWallet.value}" نهائياً؟`, "حذف", "إلغاء", '<i class="fas fa-trash-alt"></i>');
+    let targetWallet = document.getElementById("renameWalletSelect").value;
+    if(!targetWallet) return notify("يرجى اختيار المحفظة", "error");
+    
+    let ok = await showConfirm("حذف المحفظة", `هل تريد حذف محفظة "${targetWallet}" نهائياً؟`, "حذف", "إلغاء", '<i class="fas fa-trash-alt"></i>');
     if(!ok) return;
-    let w=safeJSON(store.wallets, {}); delete w[modWallet.value]; store.wallets = JSON.stringify(w); fbSave("wallets", w); logAction(`حذف محفظة ${modWallet.value}`); loadWallets(); refreshWallets();  notify("تم الحذف"); 
+    let w=safeJSON(store.wallets, {}); delete w[targetWallet]; store.wallets = JSON.stringify(w); fbSave("wallets", w); logAction(`حذف محفظة ${targetWallet}`); loadWallets(); refreshWallets();  notify("تم الحذف"); 
+    document.getElementById("renameWalletInput").value = "";
 }
-function exportData(){ if(currentUser.role === 'viewer' || currentUser.role === 'viewer_plus') return; let exportObj = {}; ["users","wallets","purchases","invest","settings","generalNotes","todoList","activityLog","stock","services"].forEach(k=>{ if(store[k]) exportObj[k]=store[k]; }); let a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([JSON.stringify(exportObj)],{type:"application/json"})); a.download=`MegaBackup_${new Date().toLocaleDateString()}.json`; a.click(); logAction("تصدير نسخة احتياطية"); }
+
+function exportData(){ if(currentUser.role === 'viewer' || currentUser.role === 'viewer_plus') return; let exportObj = {}; ["users","wallets","purchases","invest","settings","generalNotes","todoList","activityLog","stock","services","discounts"].forEach(k=>{ if(store[k]) exportObj[k]=store[k]; }); let a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([JSON.stringify(exportObj)],{type:"application/json"})); a.download=`MegaBackup_${new Date().toLocaleDateString()}.json`; a.click(); logAction("تصدير نسخة احتياطية"); }
 function importData(){ 
     if(currentUser.role !== 'admin') return notify("للأدمن فقط","error");
     let f=importFile.files[0], r=new FileReader(); 
-    r.onload=async (e)=>{ try{ let d=JSON.parse(e.target.result); const KEYS=["users","wallets","purchases","invest","settings","generalNotes","todoList","activityLog","stock","services"]; let updateObj={}; KEYS.forEach(k=>{ if(d[k]){ store[k]=typeof d[k]==='string'?d[k]:JSON.stringify(d[k]); updateObj[k]=safeJSON(store[k],{}); } }); await fbDocRef.set(updateObj, {merge:true}); notify("تم الاستعادة بنجاح"); logAction("استيراد بيانات من نسخة احتياطية"); location.reload(); }catch(err){ notify("ملف تالف","error"); } }; 
+    r.onload=async (e)=>{ try{ let d=JSON.parse(e.target.result); const KEYS=["users","wallets","purchases","invest","settings","generalNotes","todoList","activityLog","stock","services","discounts"]; let updateObj={}; KEYS.forEach(k=>{ if(d[k]){ store[k]=typeof d[k]==='string'?d[k]:JSON.stringify(d[k]); updateObj[k]=safeJSON(store[k],{}); } }); await fbDocRef.set(updateObj, {merge:true}); notify("تم الاستعادة بنجاح"); logAction("استيراد بيانات من نسخة احتياطية"); location.reload(); }catch(err){ notify("ملف تالف","error"); } }; 
     if(f) r.readAsText(f); else notify("اختر ملف","error"); 
 }
 
@@ -2440,10 +2905,16 @@ async function undoLastPurchase(){
     if(!ok) return;
     let lastP = purchases.pop();
     let wallets = safeJSON(store.wallets, {});
-    if(lastP.fromWallet && wallets[lastP.fromWallet]) { wallets[lastP.fromWallet].bal += parseFloat(lastP.cost); }
-    if(lastP.wallet && wallets[lastP.wallet]) { wallets[lastP.wallet].bal -= parseFloat(lastP.paid); }
+    // Reverse Wallet addition
+    if(lastP.wallet && wallets[lastP.wallet]) { 
+        let paidVal = parseFloat(lastP.paid); 
+        wallets[lastP.wallet].bal -= paidVal; 
+    }
+    
     store.wallets = JSON.stringify(wallets); fbSave("wallets", wallets);
     store.purchases = JSON.stringify(purchases); fbSave("purchases", purchases);
+    
+    // Reverse Investment changes
     if(lastP.investSnapshot) { store.invest = JSON.stringify(lastP.investSnapshot); fbSave("invest", lastP.investSnapshot); }
     
     // Reverse Stock if attached
@@ -2461,7 +2932,7 @@ async function undoLastPurchase(){
         }
     }
     
-    logAction("تراجع عن عملية شراء", { type: 'undo', data: lastP, refunded: lastP.cost, deducted: lastP.paid });
+    logAction("تراجع عن عملية شراء", { type: 'undo', data: lastP, deducted: lastP.paid });
     
     currentPage.history = 1;
     loadPurchaseStock();
@@ -2520,36 +2991,96 @@ async function saveUserEdit() {
 
 function closeStockModal(e) { if(e === 'force' || e.target.id === 'stockModal') document.getElementById("stockModal").classList.add("hidden"); }
 
+// --- MODIFIED STOCK FUNCTIONS ---
+
 function openAddStockModal() {
     loadServices();
+    loadWallets(); // Populate wallets in modal
+    
     document.getElementById("stockModalTitle").innerHTML = '<i class="fas fa-plus-circle"></i> إضافة اشتراك للمخزون';
     document.getElementById("stockIndex").value = "-1";
+    
     document.getElementById("stService").value = "";
+    document.getElementById("stCost").value = "";
     document.getElementById("stProfiles").value = "1";
     document.getElementById("stVendor").value = "";
     ["stEmail","stPass","stNotes"].forEach(id => document.getElementById(id).value = "");
     document.getElementById("stDuration").value = "1";
     
-    let btnSave = document.querySelector("#stockModal .btn-primary");
+    // Show Purchase Inputs and Save Button
+    document.getElementById("stockPurchaseInputs").style.display = "block";
+    document.getElementById("btnSaveStock").classList.remove("hidden");
+    document.getElementById("btnUpdateNote").classList.add("hidden");
+    
+    // Enable all inputs
     let inputs = document.querySelectorAll("#stockModal input, #stockModal select, #stockModal textarea");
-    btnSave.classList.remove("hidden");
     inputs.forEach(inp => inp.disabled = false);
 
     document.getElementById("stockModal").classList.remove("hidden");
 }
 
-function saveStock() {
-    let index = +document.getElementById("stockIndex").value;
+function verifyStockAdd() {
     let stService = document.getElementById("stService").value;
-    let stProfiles = parseInt(document.getElementById("stProfiles").value) || 1;
-    if(stProfiles < 1) stProfiles = 1;
-    
+    let stCost = parseFloat(document.getElementById("stCost").value);
+    let stWallet = document.getElementById("stWallet").value;
+
     if(!stService) return notify("يرجى اختيار الخدمة", "error");
+    if(isNaN(stCost) || stCost < 0) return notify("يرجى إدخال التكلفة بشكل صحيح", "error");
+    if(!stWallet) return notify("يرجى اختيار محفظة الدفع", "error");
     
+    let wallets = safeJSON(store.wallets, {});
+    let w = wallets[stWallet];
+    
+    if(w.bal < stCost) return notify("رصيد المحفظة غير كافي", "error");
+    
+    // Prepare Confirmation Modal
+    let wAfter = w.bal - stCost;
+    let cleanName = stService + ((document.getElementById("stProfiles").value > 1) ? " Shared" : "");
+    
+    document.getElementById("stockConfirmBody").innerHTML = `
+        <div style="display:grid; gap:8px;">
+            <div><i class="fas fa-tag"></i> <b>الخدمة:</b> ${esc(cleanName)}</div>
+            <div><i class="fas fa-wallet"></i> <b>المحفظة:</b> ${esc(stWallet)}</div>
+            <hr style="margin:5px 0; border-top:1px dashed var(--border-color)">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span>الرصيد الحالي:</span>
+                <span style="font-weight:bold">${fix(w.bal)} ${w.cur}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; color:var(--danger)">
+                <span>المبلغ المراد خصمه:</span>
+                <span style="font-weight:bold">-${fix(stCost)} ${w.cur}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; color:var(--success); border-top:1px solid var(--border-color); padding-top:5px; margin-top:5px;">
+                <span>الرصيد بعد العملية:</span>
+                <span style="font-weight:bold">${fix(wAfter)} ${w.cur}</span>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById("stockConfirmModal").style.display = "flex";
+    document.getElementById("stockConfirmOkBtn").onclick = () => {
+        document.getElementById("stockConfirmModal").style.display = "none";
+        executeStockAdd(stService, stCost, stWallet, wallets);
+    };
+}
+
+function executeStockAdd(stService, stCost, stWallet, wallets) {
+    let stProfiles = parseInt(document.getElementById("stProfiles").value) || 1;
+    let w = wallets[stWallet];
+    let wBefore = w.bal;
+    
+    // Deduct from Wallet
+    w.bal -= stCost;
+    
+    // Deduct from Store Capital (Invest)
+    let invest = safeJSON(store.invest, {});
+    let shareType = (w.cur === '$') ? 'd' : 's';
+    invest.store[shareType] -= stCost;
+    
+    // Generate Name
     let baseName = stService + (stProfiles > 1 ? " Shared" : "");
     let stock = safeJSON(store.stock, []);
-    
-    let activeStock = stock.filter(x => x.status === 'active' && x.id !== (index === -1 ? null : stock[index].id));
+    let activeStock = stock.filter(x => x.status === 'active');
     let finalName = baseName;
     let counter = 2;
     while(activeStock.some(x => (x.displayName || x.service) === finalName)) {
@@ -2558,40 +3089,66 @@ function saveStock() {
     }
 
     let s = {
-        id: index === -1 ? Date.now() + '_' + Math.random().toString(36).substr(2,5) : stock[index].id,
+        id: Date.now() + '_' + Math.random().toString(36).substr(2,5),
         service: stService,
         displayName: finalName,
         totalProfiles: stProfiles,
-        soldProfiles: index === -1 ? 0 : (stock[index].soldProfiles || 0),
+        soldProfiles: 0,
         vendor: document.getElementById("stVendor").value,
         duration: document.getElementById("stDuration").value,
         email: document.getElementById("stEmail").value.trim(),
         pass: document.getElementById("stPass").value,
         notes: document.getElementById("stNotes").value,
-        buyers: index === -1 ? [] : (stock[index].buyers || []),
-        status: index === -1 ? 'active' : (stock[index].status || 'active'),
+        buyers: [],
+        status: 'active',
         date: new Date().toLocaleDateString('ar-EG'),
-        timestamp: new Date().getTime()
+        timestamp: new Date().getTime(),
+        cost: stCost,           // Save Cost
+        costCurrency: w.cur,    // Save Cost Currency
+        sourceWallet: stWallet  // Save Source Wallet
     };
     
-    if(index !== -1) {
-        let old = stock[index];
-        if(old.soldDate) s.soldDate = old.soldDate;
-    }
-    
-    if(index === -1) { stock.unshift(s); logAction(`إضافة اشتراك للمخزون: ${s.displayName}`); }
-    else { stock[index] = s; logAction(`تعديل اشتراك في المخزون: ${s.displayName}`); }
+    stock.unshift(s);
     
     store.stock = JSON.stringify(stock); fbSave("stock", stock);
+    store.wallets = JSON.stringify(wallets); fbSave("wallets", wallets);
+    store.invest = JSON.stringify(invest); fbSave("invest", invest);
+    
+    logAction(`شراء مخزون جديد: ${s.displayName}`, {
+        type: 'stock_add',
+        item: s.displayName,
+        cost: stCost,
+        currency: w.cur,
+        wallet: stWallet,
+        wBefore: wBefore,
+        wAfter: w.bal
+    });
+    
     document.getElementById("stockModal").classList.add("hidden");
     currentPage.stock = 1;
     loadPurchaseStock();
-    refreshStock();  notify("تم الحفظ بنجاح");
+    refreshAll();
+    notify("تم شراء وإضافة المخزون بنجاح");
+}
+
+function updateStockNote() {
+    let index = +document.getElementById("stockIndex").value;
+    if (index === -1) return;
+    
+    let stock = safeJSON(store.stock, []);
+    stock[index].notes = document.getElementById("stNotes").value;
+    
+    store.stock = JSON.stringify(stock); fbSave("stock", stock);
+    logAction(`تحديث ملاحظات المخزون: ${stock[index].displayName || stock[index].service}`);
+    
+    document.getElementById("stockModal").classList.add("hidden");
+    refreshStock();
+    notify("تم تحديث الملاحظات");
 }
 
 function switchStockTab(tab, btn) {
     currentStockTab = tab;
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#stock .tab-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     
     if(tab === 'sold' && currentUser.role === 'admin') {
@@ -2668,6 +3225,7 @@ function refreshStock() {
             <th>الإيميل</th>
             <th>البروفايلات</th>
             <th>تاريخ البيع</th>
+            <th>المتبقي</th>
             <th>التفاصيل</th>
             ${delTh}
         </tr>`;
@@ -2678,12 +3236,19 @@ function refreshStock() {
     paginated.forEach((item) => {
         let realIndex = stock.findIndex(x => x.id === item.id);
         
-        let purchaseDate = new Date(item.timestamp);
-        let expiryDate = new Date(purchaseDate);
-        expiryDate.setMonth(expiryDate.getMonth() + parseInt(item.duration));
-        let daysLeft = Math.max(0, Math.ceil((expiryDate - new Date()) / (1000 * 60 * 60 * 24)));
-        
         let profStr = `${item.soldProfiles || 0}/${item.totalProfiles || 1}`;
+        let timeBadge = "";
+        
+        let parsedDuration = parseInt(item.duration);
+        if (parsedDuration === 0) {
+            timeBadge = `<span class="badge badge-success">بدون مدة</span>`;
+        } else {
+            let purchaseDate = new Date(item.timestamp);
+            let expiryDate = new Date(purchaseDate);
+            expiryDate.setMonth(expiryDate.getMonth() + parsedDuration);
+            let daysLeft = Math.max(0, Math.ceil((expiryDate - new Date()) / (1000 * 60 * 60 * 24)));
+            timeBadge = `<span class="badge ${daysLeft===0?'badge-danger':'badge-warning'}">${daysLeft} يوم</span>`;
+        }
 
         if(currentStockTab === 'active') {
             let detailsBtn = `<button class="btn btn-primary" style="padding:5px 10px" onclick="editStock(${realIndex})"><i class="fas fa-eye"></i></button>`;
@@ -2693,7 +3258,7 @@ function refreshStock() {
                 <td class="wide-col" title="${esc(item.email)}">${esc(item.email)}</td>
                 <td>${esc(item.vendor) || '-'}</td>
                 <td class="eng-num" style="font-weight:bold;">${profStr}</td>
-                <td class="eng-num"><span class="badge ${daysLeft===0?'badge-danger':'badge-warning'}">${daysLeft} يوم</span></td>
+                <td class="eng-num">${timeBadge}</td>
                 <td>${detailsBtn}</td>
                 ${sellBtn}
             </tr>`;
@@ -2706,12 +3271,13 @@ function refreshStock() {
                 <td class="wide-col" title="${esc(item.email)}">${esc(item.email)}</td>
                 <td class="eng-num" style="font-weight:bold;">${profStr}</td>
                 <td class="eng-num">${item.soldDate || '-'}</td>
+                <td class="eng-num">${timeBadge}</td>
                 <td>${viewBtn}</td>
                 ${delCell}
             </tr>`;
         }
     });
-    let colSpan = currentStockTab === 'active' ? (canSell ? 7 : 6) : (isAdmin ? 6 : 5);
+    let colSpan = currentStockTab === 'active' ? (canSell ? 7 : 6) : (isAdmin ? 7 : 6);
     tbody.innerHTML = rows || `<tr><td colspan='${colSpan}' style='text-align:center; padding:20px; color:var(--text-muted)'>لا توجد بيانات</td></tr>`;
 }
 
@@ -2724,16 +3290,21 @@ function editStock(i) {
     let isAdmin = currentUser.role === 'admin';
 
     loadServices();
-    document.getElementById("stockModalTitle").innerHTML = isAdmin ? '<i class="fas fa-edit"></i> تعديل المخزون' : '<i class="fas fa-eye"></i> تفاصيل المخزون';
+    document.getElementById("stockModalTitle").innerHTML = isAdmin ? '<i class="fas fa-edit"></i> تفاصيل المخزون' : '<i class="fas fa-eye"></i> تفاصيل المخزون';
     document.getElementById("stockIndex").value = i;
     
+    // Hide Purchase Inputs
+    document.getElementById("stockPurchaseInputs").style.display = "none";
+    document.getElementById("btnSaveStock").classList.add("hidden");
+    document.getElementById("btnUpdateNote").classList.remove("hidden");
+    
+    // Fill Data
     let sel = document.getElementById("stService");
     sel.value = item.service;
     if(sel.value !== item.service) { 
          let o = document.createElement("option"); o.value=item.service; o.text=item.service; sel.appendChild(o);
          sel.value = item.service;
     }
-    
     document.getElementById("stProfiles").value = item.totalProfiles || 1;
     document.getElementById("stVendor").value = item.vendor || "";
     document.getElementById("stDuration").value = item.duration;
@@ -2741,16 +3312,10 @@ function editStock(i) {
     document.getElementById("stPass").value = item.pass;
     document.getElementById("stNotes").value = item.notes;
 
-    let btnSave = document.querySelector("#stockModal .btn-primary");
-    let inputs = document.querySelectorAll("#stockModal input, #stockModal select, #stockModal textarea");
-    
-    if (!isAdmin) {
-        btnSave.classList.add("hidden");
-        inputs.forEach(inp => inp.disabled = true);
-    } else {
-        btnSave.classList.remove("hidden");
-        inputs.forEach(inp => inp.disabled = false);
-    }
+    // Disable all except Notes
+    let inputs = document.querySelectorAll("#stockModal input, #stockModal select");
+    inputs.forEach(inp => inp.disabled = true);
+    document.getElementById("stNotes").disabled = false;
 
     document.getElementById("stockModal").classList.remove("hidden");
 }
@@ -2766,6 +3331,7 @@ function viewSoldDetails(i) {
     body.innerHTML += row("كلمة المرور", esc(item.pass));
     body.innerHTML += row("البائع", esc(item.vendor) || "-");
     body.innerHTML += row("البروفايلات", `${item.soldProfiles || 0} / ${item.totalProfiles || 1}`);
+    body.innerHTML += row("تكلفة الشراء", (item.cost || 0) + " " + (item.costCurrency || ''));
     body.innerHTML += `<hr style="margin:10px 0; border:0; border-top:1px dashed var(--border-color)">`;
     body.innerHTML += row("تاريخ البيع", item.soldDate);
     
