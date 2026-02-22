@@ -457,11 +457,11 @@
         <p style="color:var(--text-muted); font-size:14px; margin-bottom:30px">أهلاً بك مجدداً في نظام Mega Store</p>
         
         <div class="custom-input">
-            <input id="loginUser" placeholder="اسم المستخدم">
+            <input id="loginUser" placeholder="اسم المستخدم" oninput="document.getElementById('loginError').style.display='none'; this.style.borderColor='';">
             <i class="fas fa-user"></i>
         </div>
         <div class="custom-input">
-            <input id="loginPass" type="password" placeholder="كلمة المرور">
+            <input id="loginPass" type="password" placeholder="كلمة المرور" oninput="document.getElementById('loginError').style.display='none'; this.style.borderColor='';">
             <i class="fas fa-lock"></i>
         </div>
         
@@ -469,6 +469,8 @@
             <div class="loading-spinner"></div>
             <span><i class="fas fa-sign-in-alt"></i> دخول للنظام</span>
         </button>
+
+        <div id="loginError" style="display:none; margin-top:18px; padding:14px 18px; border-radius:12px; font-size:14px; font-weight:700; text-align:center;"></div>
     </div>
 </div>
 
@@ -831,6 +833,19 @@
                 <i class="fas fa-search" style="position:absolute; right:15px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
             </div>
         </div>
+        <div class="grid-2" style="margin-bottom:20px;">
+            <div class="input-group" style="margin-bottom:0;">
+                <label>من تاريخ</label>
+                <input type="date" id="historyFromDate" oninput="currentPage.history=1; filterHistory()">
+            </div>
+            <div class="input-group" style="margin-bottom:0; display:flex; flex-direction:column; gap:8px;">
+                <label>إلى تاريخ</label>
+                <div style="display:flex; gap:8px;">
+                    <input type="date" id="historyToDate" oninput="currentPage.history=1; filterHistory()" style="flex:1">
+                    <button class="btn" onclick="document.getElementById('historyFromDate').value=''; document.getElementById('historyToDate').value=''; currentPage.history=1; filterHistory();" style="padding:10px 14px; background:transparent; border:1px solid var(--border-color); color:var(--text-muted); flex-shrink:0;" title="مسح الفلتر"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+        </div>
         <div class="table-container">
             <table>
                 <thead><tr><th>التاريخ</th><th>العميل</th><th>الجوال</th><th>الخدمة</th><th>المدة</th><th>الدفع</th><th>التكلفة</th><th>المحفظة</th></tr></thead>
@@ -1168,8 +1183,8 @@
         <div class="input-group"><label>المدة</label>
             <select id="stDuration"><option value="0">بدون مدة</option><option value="1">1 شهر</option><option value="2">2 شهر</option><option value="3">3 شهور</option><option value="6">6 شهور</option><option value="12">12 شهر</option></select>
         </div>
-        <div class="input-group"><label>البريد الإلكتروني</label><input id="stEmail" placeholder="email@example.com"></div>
-        <div class="input-group"><label>كلمة المرور</label><input id="stPass" placeholder="Password"></div>
+        <div class="input-group"><label>البريد الإلكتروني</label><div style="display:flex; gap:8px;"><input id="stEmail" placeholder="email@example.com" style="flex:1"><button type="button" class="btn btn-primary" style="padding:10px 14px; flex-shrink:0;" onclick="copyField('stEmail', this)" title="نسخ الإيميل"><i class="fas fa-copy"></i></button></div></div>
+        <div class="input-group"><label>كلمة المرور</label><div style="display:flex; gap:8px;"><input id="stPass" placeholder="Password" style="flex:1"><button type="button" class="btn btn-primary" style="padding:10px 14px; flex-shrink:0;" onclick="copyField('stPass', this)" title="نسخ كلمة المرور"><i class="fas fa-copy"></i></button></div></div>
         <div class="input-group"><label>ملاحظات (قابل للتعديل لاحقاً)</label><textarea id="stNotes" style="height:80px; resize:vertical;"></textarea></div>
         
         <button id="btnSaveStock" class="btn btn-primary" style="width:100%; margin-top:10px" onclick="verifyStockAdd()"><i class="fas fa-save"></i> حفظ وشراء</button>
@@ -1726,6 +1741,10 @@ async function attemptLogin() {
     const p = document.getElementById("loginPass").value.trim();
     let users = safeJSON(store.users, []);
     
+    // إخفاء أي إشعار سابق
+    const errEl = document.getElementById("loginError");
+    errEl.style.display = "none";
+
     btn.classList.add('loading'); 
 
     await new Promise(r => setTimeout(r, 800));
@@ -1739,7 +1758,13 @@ async function attemptLogin() {
         }
 
         if(userObj.status === "banned") { 
-            notify("تم حظر هذا الحساب. راجع المسؤول.", "error"); 
+            errEl.innerHTML = '<i class="fas fa-ban"></i> تم حظر هذا الحساب. راجع المسؤول.';
+            errEl.style.background = 'rgba(239,68,68,0.12)';
+            errEl.style.color = '#ef4444';
+            errEl.style.border = '1.5px solid rgba(239,68,68,0.35)';
+            errEl.style.display = 'block';
+            document.getElementById("loginPass").value = "";
+            document.getElementById("loginPass").style.borderColor = "var(--danger)";
             btn.classList.remove('loading');
             return; 
         }
@@ -1754,10 +1779,23 @@ async function attemptLogin() {
         document.body.classList.remove("locked");
         loadWallets(); loadProfitSettings(); loadServices(); loadPurchaseStock(); refreshAll(); applyRBAC();
         document.getElementById("currentUserDisplay").innerHTML = `مرحباً، ${esc(currentUser.username)} (${getRoleName(currentUser.role)})`;
+        resetSessionTimer();
         checkExpiringOnLogin();
         checkExpiredCouponsOnLogin();
     } else { 
-        notify("بيانات الدخول غير صحيحة", "error");
+        errEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> اسم المستخدم أو كلمة المرور غير صحيحة.';
+        errEl.style.background = 'rgba(239,68,68,0.12)';
+        errEl.style.color = '#ef4444';
+        errEl.style.border = '1.5px solid rgba(239,68,68,0.35)';
+        errEl.style.display = 'block';
+        document.getElementById("loginPass").value = "";
+        document.getElementById("loginUser").style.borderColor = "var(--danger)";
+        document.getElementById("loginPass").style.borderColor = "var(--danger)";
+        // إعادة الحدود للطبيعي بعد 3 ثوان
+        setTimeout(() => {
+            document.getElementById("loginUser").style.borderColor = "";
+            document.getElementById("loginPass").style.borderColor = "";
+        }, 3000);
     }
     
     btn.classList.remove('loading'); 
@@ -1818,7 +1856,7 @@ function getOS() {
     return os || "Unknown";
 }
 
-function logout() { location.reload(); }
+function logout() { clearTimeout(_sessionTimer); currentUser = null; location.reload(); }
 function getRoleName(role) { 
     if(role==='admin') return 'أدمن';
     if(role==='employee') return 'موظف';
@@ -2834,9 +2872,14 @@ function refreshHistory(){
     let p = safeJSON(store.purchases, []);
     let isRestricted = currentUser ? (currentUser.role === 'viewer') : true;
     let v = document.getElementById("historySearch").value.toLowerCase();
+    let fromDate = document.getElementById("historyFromDate") ? document.getElementById("historyFromDate").value : "";
+    let toDate = document.getElementById("historyToDate") ? document.getElementById("historyToDate").value : "";
     
     let filtered = p.slice().reverse().filter(item => {
-        return !v || (item.customer||'').toLowerCase().includes(v) || (item.sub||'').toLowerCase().includes(v) || (item.phone||'').includes(v);
+        let matchesSearch = !v || (item.customer||'').toLowerCase().includes(v) || (item.sub||'').toLowerCase().includes(v) || (item.phone||'').includes(v);
+        let matchesFrom = !fromDate || (item.date && item.date >= fromDate);
+        let matchesTo = !toDate || (item.date && item.date <= toDate);
+        return matchesSearch && matchesFrom && matchesTo;
     });
     
     renderPagination(filtered.length, 'history', refreshHistory, 'historyPagination');
@@ -3870,6 +3913,54 @@ function deleteService(idx) {
     store.services = JSON.stringify(list); fbSave("services", list);
     renderServicesSettings();
 }
+
+// --- نسخ قيمة حقل إلى الحافظة ---
+function copyField(fieldId, btn) {
+    let input = document.getElementById(fieldId);
+    if (!input || !input.value) return notify("لا توجد قيمة للنسخ", "error");
+    navigator.clipboard.writeText(input.value).then(() => {
+        let origHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        btn.style.background = 'var(--success)';
+        setTimeout(() => { btn.innerHTML = origHTML; btn.style.background = ''; }, 1500);
+    }).catch(() => {
+        // Fallback for older browsers
+        input.disabled = false;
+        input.select();
+        document.execCommand('copy');
+        input.disabled = true;
+        let origHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        btn.style.background = 'var(--success)';
+        setTimeout(() => { btn.innerHTML = origHTML; btn.style.background = ''; }, 1500);
+    });
+}
+
+// --- مؤقت انتهاء الجلسة (30 دقيقة) ---
+let _sessionTimer = null;
+const SESSION_MS = 30 * 60 * 1000;
+
+function resetSessionTimer() {
+    if (!currentUser) return;
+    clearTimeout(_sessionTimer);
+    _sessionTimer = setTimeout(async () => {
+        let ok = await showConfirm(
+            "انتهاء مدة الجلسة",
+            "لم يتم رصد أي نشاط منذ 30 دقيقة. هل تريد الاستمرار؟",
+            "البقاء", "تسجيل خروج",
+            '<i class="fas fa-clock"></i>'
+        );
+        if (ok) {
+            resetSessionTimer();
+        } else {
+            logout();
+        }
+    }, SESSION_MS);
+}
+
+['mousemove','keydown','click','touchstart'].forEach(ev =>
+    document.addEventListener(ev, () => { if(currentUser) resetSessionTimer(); }, { passive: true })
+);
 
 window.onload = init;
 </script>
