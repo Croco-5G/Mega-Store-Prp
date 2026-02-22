@@ -677,7 +677,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
             <h3><i class="fas fa-clipboard-list" style="color:var(--primary)"></i> سجل حركات الموقع</h3>
             <div style="display:flex; gap:10px">
-                <button id="btnVisLogs" class="btn btn-warning hidden" onclick="window.changeLogsVis()" style="padding: 8px 15px; font-size:13px"><i class="fas fa-eye"></i> الخصوصية</button>
+                <button id="btnVisLogs" class="btn btn-warning hidden" onclick="changeLogsVis()" style="padding: 8px 15px; font-size:13px"><i class="fas fa-eye"></i> الخصوصية</button>
                 <button id="btnClearLogs" class="btn btn-danger hidden" onclick="clearLogs()" style="padding: 8px 15px; font-size:13px"><i class="fas fa-trash-alt"></i> مسح السجل</button>
             </div>
         </div>
@@ -1870,7 +1870,7 @@ function refreshLogs() {
 }
 
 // الدالة التي تم إعادة بنائها وجعلها Global لتجنب خطأ is not defined
-window.changeLogsVis = async function() {
+async function changeLogsVis() {
     if(!currentUser || currentUser.role !== 'admin') return notify("للأدمن فقط", "error");
     let s = safeJSON(store.settings, {});
     let current = s.logsVis || 'all';
@@ -1889,7 +1889,8 @@ window.changeLogsVis = async function() {
         notify("تم التعديل بنجاح");
         applyRBAC();
     }
-};
+}
+window.changeLogsVis = changeLogsVis;
 
 async function clearLogs() {
     if(currentUser.role !== 'admin') return notify("للأدمن فقط", "error");
@@ -2203,7 +2204,7 @@ function addPurchase(){
                 <span style="color:var(--success)"><i class="fas fa-money-bill-wave"></i> مدفوع: ${paid}${paidCur}</span>
             </div>
             ${isComp ? `<div style="color:var(--danger); font-weight:bold; padding:5px; background:var(--yellow-bg); border-radius:5px;"><i class="fas fa-exclamation-circle"></i> هذه العملية مسجلة كـ "تعويض"</div>` : ''}
-            ${appliedDiscountPct > 0 ? `<div style="color:var(--success); font-weight:bold; padding:5px; background:#dcfce7; border-radius:5px;"><i class="fas fa-ticket-alt"></i> تم تطبيق كود خصم: ${appliedDiscountPct}%</div>` : ''}
+            ${appliedDiscountPct > 0 ? `<div style="color:var(--success); font-weight:bold; text-align:center; padding:5px; border:1px solid var(--success); border-radius:5px; margin:5px 0;"><i class="fas fa-ticket-alt"></i> تم تطبيق كود خصم: ${appliedDiscountPct}%</div>` : ''}
             <div><i class="fas fa-info-circle"></i> <b>حالة التكلفة:</b> ${isFirstProfile ? `<span style="color:var(--danger)">أول بروفايل (سيتم خصم ${fix(calculatedCost)} ${paidCur})</span>` : '<span style="color:var(--success)">مدفوعة سابقاً (التكلفة 0)</span>'}</div>
             <div style="font-size:12px; margin-top:6px; color:var(--text-muted)"><i class="fas fa-arrow-right"></i> إيداع في: ${esc(wallet.value)}</div>
         </div>`;
