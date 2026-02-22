@@ -606,7 +606,7 @@
             <div class="input-group"><label>اسم العميل</label><input id="customer" placeholder="اسم العميل"></div>
         </div>
         <div class="grid-2">
-            <div class="input-group"><label>رقم جوال العميل (مع المقدمة)</label><input id="customerPhone" placeholder="+97xxxxxxxxxx" oninput="validatePhoneInput(this)"></div>
+            <div class="input-group"><label>رقم جوال العميل (مع المقدمة)</label><input id="customerPhone" placeholder="+97***********" oninput="validatePhoneInput(this)"></div>
             <div class="input-group"><label>يُودع في محفظة:</label><select id="wallet"></select></div>
         </div>
         <div class="grid-2">
@@ -1149,16 +1149,16 @@ const DEFAULT_USER = {
     deviceInfo: "-"
 };
 
-// ─── Firebase Configuration ───────────────────────────────────────  
+// ─── Firebase Configuration ───────────────────────────────────────
 const firebaseConfig = {
-    apiKey: "AIzaSyA8a14tvoyKA5ADkRqUugvQyy8P2VFM_3o",
-    authDomain: "mega-store-f4cec.firebaseapp.com",
-    projectId: "mega-store-f4cec",
-    storageBucket: "mega-store-f4cec.firebasestorage.app",
-    messagingSenderId: "821297908020",
-    appId: "1:821297908020:web:d11ed6bbec76a40c6bbd61"
-  };
-
+    apiKey: "AIzaSyBDCTQSHeRD7gG4XdyG1nQxAD1ECQHzxNE",
+    authDomain: "mega-store-58cc6.firebaseapp.com",
+    projectId: "mega-store-58cc6",
+    storageBucket: "mega-store-58cc6.firebasestorage.app",
+    messagingSenderId: "477692639493",
+    appId: "1:477692639493:web:3520e16e20fa0fda089f6c",
+    measurementId: "G-PBR93L70M1"
+};
 
 // ─── In-Memory Store (replaces localStorage for app data) ────────
 let store = {};
@@ -1207,25 +1207,32 @@ function resolveConfirm(val) {
     if(_confirmResolve) { _confirmResolve(val); _confirmResolve = null; }
 }
 
-function showPrompt(title, msg = "", placeholder = "", iconHtml = '<i class="fas fa-pen"></i>') {
+function showPrompt(title, msg = "", placeholder = "", iconHtml = '<i class="fas fa-pen"></i>', isSelect = false, selectOptions = "") {
     return new Promise(resolve => {
         _promptResolve = resolve;
         document.getElementById("pdIcon").innerHTML = iconHtml; 
         document.getElementById("pdTitle").textContent = title;
         document.getElementById("pdMsg").textContent = msg;
-        document.getElementById("pdInput").placeholder = placeholder;
-        document.getElementById("pdInput").value = "";
         
-        let selectExists = document.getElementById("logsVisSelect");
-        if(!selectExists) document.getElementById("pdInputContainer").style.display = "block";
+        if (isSelect) {
+            document.getElementById("pdInputContainer").innerHTML = `<select id="logsVisSelect" style="width:100%; padding:12px; border-radius:10px; border:2px solid var(--border-color); outline:none; background:var(--bg-input); color:var(--text-main); font-weight:bold;">${selectOptions}</select>`;
+        } else {
+            document.getElementById("pdInputContainer").innerHTML = `<input id="pdInput" class="dialog-input" style="width:100%; padding:12px; border-radius:10px; border:2px solid var(--border-color); outline:none; background:var(--bg-input); color:var(--text-main);" placeholder="${placeholder}">`;
+        }
         
         document.getElementById("customPromptDialog").style.display = "flex";
-        setTimeout(() => document.getElementById("pdInput").focus(), 100);
+        if(!isSelect) setTimeout(() => { let input = document.getElementById("pdInput"); if(input) input.focus(); }, 100);
     });
 }
 function resolvePrompt(ok) {
     document.getElementById("customPromptDialog").style.display = "none";
-    let val = ok ? document.getElementById("pdInput").value.trim() : null;
+    let val = null;
+    if(ok) {
+        let input = document.getElementById("pdInput");
+        let select = document.getElementById("logsVisSelect");
+        if (input) val = input.value.trim();
+        else if (select) val = select.value;
+    }
     if(_promptResolve) { _promptResolve(val); _promptResolve = null; }
 }
 
@@ -1285,7 +1292,10 @@ function initFirebase() {
                 });
                 if (currentUser) refreshAll();
             } else {
-                fbDocRef.set(getDefaultData()).catch(e => console.error(e));
+                // الحماية المزدوجة: لا تنشئ بيانات افتراضية إذا كانت القراءة من الكاش المحلي الفارغ!
+                if (!fromCache) {
+                    fbDocRef.set(getDefaultData(), {merge: true}).catch(e => console.error(e));
+                }
             }
             
             if (hasPendingWrites) {
@@ -1476,29 +1486,25 @@ function logAction(actionDescription, details=null) {
 }
 
 function init(){
-    if(!store.users) store.users = JSON.stringify([DEFAULT_USER]); fbSave("users", [DEFAULT_USER]);
+    // تجهيز المتغيرات في الكاش المحلي فقط (بدون أي أوامر fbSave لضمان عدم مسح السيرفر)
+    if(!store.users) store.users = JSON.stringify([DEFAULT_USER]);
     if(!store.wallets){
         store.wallets = JSON.stringify({
             "جوال باي — سعاد":{bal:0, cur:"₪", active:true},
             "جوال باي — محمد":{bal:0, cur:"₪", active:true},
             "بال باي — أحمد":{bal:0, cur:"₪", active:true},
             "بايننس — احمد":{bal:0, cur:"$", active:true}
-        }); fbSave("wallets", {
-            "جوال باي — سعاد":{bal:0, cur:"₪", active:true},
-            "جوال باي — محمد":{bal:0, cur:"₪", active:true},
-            "بال باي — أحمد":{bal:0, cur:"₪", active:true},
-            "بايننس — احمد":{bal:0, cur:"$", active:true}
         });
     }
-    if(!store.purchases) store.purchases = "[]"; fbSave("purchases", []);
-    if(!store.invest) store.invest = JSON.stringify({ahmad:{d:0,s:0},mohamed:{d:0,s:0},store:{d:0,s:0}}); fbSave("invest", {ahmad:{d:0,s:0},mohamed:{d:0,s:0},store:{d:0,s:0}});
-    if(!store.generalNotes) store.generalNotes = "[]"; fbSave("generalNotes", []);
-    if(!store.todoList) store.todoList = "[]"; fbSave("todoList", []);
-    if(!store.settings) store.settings = JSON.stringify({ahmad: 35, mohamed: 35, store: 30, deductCost: true, exchangeRate: 0, logsVis: 'all', discountEnabled:true, discountChance:25, discountMin:10, discountMax:20, validityMin:15, validityMax:45}); fbSave("settings", {ahmad: 35, mohamed: 35, store: 30, deductCost: true, exchangeRate: 0, logsVis: 'all', discountEnabled:true, discountChance:25, discountMin:10, discountMax:20, validityMin:15, validityMax:45});
-    if(!store.activityLog) store.activityLog = "[]"; fbSave("activityLog", []);
-    if(!store.stock) store.stock = "[]"; fbSave("stock", []);
-    if(!store.services) store.services = "[]"; fbSave("services", []);
-    if(!store.discounts) store.discounts = "[]"; fbSave("discounts", []);
+    if(!store.purchases) store.purchases = "[]"; 
+    if(!store.invest) store.invest = JSON.stringify({ahmad:{d:0,s:0},mohamed:{d:0,s:0},store:{d:0,s:0}}); 
+    if(!store.generalNotes) store.generalNotes = "[]"; 
+    if(!store.todoList) store.todoList = "[]"; 
+    if(!store.settings) store.settings = JSON.stringify({ahmad: 35, mohamed: 35, store: 30, deductCost: true, exchangeRate: 0, logsVis: 'all', discountEnabled:true, discountChance:25, discountMin:10, discountMax:20, validityMin:15, validityMax:45}); 
+    if(!store.activityLog) store.activityLog = "[]"; 
+    if(!store.stock) store.stock = "[]"; 
+    if(!store.services) store.services = "[]"; 
+    if(!store.discounts) store.discounts = "[]"; 
 
     if(localStorage.getItem("darkMode") === "true") {
         document.body.classList.add("dark-mode");
@@ -1861,6 +1867,28 @@ function refreshLogs() {
         rows += `<tr><td style="direction:ltr; text-align:right">${log.time}</td><td><b>${esc(log.user)}</b></td><td>${esc(log.action)}</td><td>${detailsBtn}</td></tr>`;
     });
     tbody.innerHTML = rows || `<tr><td colspan='4' style='text-align:center; padding:20px; color:var(--text-muted)'>لا توجد بيانات</td></tr>`;
+}
+
+// الدالة المفقودة التي تم إعادة بناءها
+async function changeLogsVis() {
+    if(!currentUser || currentUser.role !== 'admin') return notify("للأدمن فقط", "error");
+    let s = safeJSON(store.settings, {});
+    let current = s.logsVis || 'all';
+    let opts = `
+        <option value="all" ${current==='all'?'selected':''}>الجميع</option>
+        <option value="no_viewer" ${current==='no_viewer'?'selected':''}>منع المشاهدين</option>
+        <option value="no_employee" ${current==='no_employee'?'selected':''}>منع الموظفين والمشاهدين</option>
+        <option value="admin_only" ${current==='admin_only'?'selected':''}>الأدمن فقط</option>
+    `;
+    let res = await showPrompt("صلاحيات رؤية السجل", "اختر من يمكنه رؤية سجل النشاط:", "", '<i class="fas fa-eye-slash" style="color:var(--warning)"></i>', true, opts);
+    
+    if(res) {
+        s.logsVis = res;
+        store.settings = JSON.stringify(s); fbSave("settings", s);
+        logAction(`تعديل خصوصية السجل إلى: ${res}`);
+        notify("تم التعديل بنجاح");
+        applyRBAC();
+    }
 }
 
 async function clearLogs() {
@@ -2335,7 +2363,6 @@ function _executePurchase(paid, paidCur, duration, settings, stItem, cleanName, 
     
     // Reset Form
     paidAmount.value=""; customer.value=""; sub.value=""; customerPhone.value=""; 
-    document.getElementById("subDuration").value="1";
     document.getElementById("discountCodeInput").value="";
     document.getElementById("isCompensation").checked = false;
 }
