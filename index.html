@@ -601,7 +601,7 @@
         <h3><i class="fas fa-cart-plus" style="color:var(--primary)"></i> تسجيل اشتراك جديد</h3>
         <div class="grid-2">
             <div class="input-group"><label>نوع الاشتراك (المخزون)</label>
-                <select id="sub" onchange="syncPurchaseDuration()"><option value="">اختر من المخزون المتاح...</option></select>
+                <select id="sub"><option value="">اختر من المخزون المتاح...</option></select>
             </div>
             <div class="input-group"><label>اسم العميل</label><input id="customer" placeholder="اسم العميل"></div>
         </div>
@@ -677,7 +677,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
             <h3><i class="fas fa-clipboard-list" style="color:var(--primary)"></i> سجل حركات الموقع</h3>
             <div style="display:flex; gap:10px">
-                <button id="btnVisLogs" class="btn btn-warning hidden" onclick="changeLogsVis()" style="padding: 8px 15px; font-size:13px"><i class="fas fa-eye"></i> الخصوصية</button>
+                <button id="btnVisLogs" class="btn btn-warning hidden" onclick="window.changeLogsVis()" style="padding: 8px 15px; font-size:13px"><i class="fas fa-eye"></i> الخصوصية</button>
                 <button id="btnClearLogs" class="btn btn-danger hidden" onclick="clearLogs()" style="padding: 8px 15px; font-size:13px"><i class="fas fa-trash-alt"></i> مسح السجل</button>
             </div>
         </div>
@@ -1869,8 +1869,8 @@ function refreshLogs() {
     tbody.innerHTML = rows || `<tr><td colspan='4' style='text-align:center; padding:20px; color:var(--text-muted)'>لا توجد بيانات</td></tr>`;
 }
 
-// الدالة المفقودة التي تم إعادة بناءها
-async function changeLogsVis() {
+// الدالة التي تم إعادة بنائها وجعلها Global لتجنب خطأ is not defined
+window.changeLogsVis = async function() {
     if(!currentUser || currentUser.role !== 'admin') return notify("للأدمن فقط", "error");
     let s = safeJSON(store.settings, {});
     let current = s.logsVis || 'all';
@@ -1889,7 +1889,7 @@ async function changeLogsVis() {
         notify("تم التعديل بنجاح");
         applyRBAC();
     }
-}
+};
 
 async function clearLogs() {
     if(currentUser.role !== 'admin') return notify("للأدمن فقط", "error");
