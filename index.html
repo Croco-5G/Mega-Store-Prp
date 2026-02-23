@@ -1322,7 +1322,8 @@ const firebaseConfig = {
 let store = {};
 let fbDocRef = null;
 let fbConnected = false;
-let isFbSaving = false;
+let _syncStatusTimer = null; // لإدارة مؤقت حالة المزامنة
+let _pendingWritesTimer = null; // لرصد الكتابات المعلقة طويلاً
 let myProfitChart = null;
 let mySalesChart = null;
 let currentUser = null; 
@@ -1411,11 +1412,24 @@ function fbSave(key, val) {
     if (isDemoMode) return;
     if (!fbDocRef) return;
     updateSyncStatus("جاري الحفظ...", "loading");
+
+    // مؤقت احتياطي: إذا مرّت 10 ثوانٍ دون تأكيد من الخادم، نُعلم المستخدم
+    clearTimeout(_pendingWritesTimer);
+    _pendingWritesTimer = setTimeout(() => {
+        updateSyncStatus("تأخر في الاتصال، تحقق من الإنترنت", "error");
+    }, 10000);
     
-    fbDocRef.set({ [key]: val }, { merge: true }).catch(e => {
-        console.error("fbSave error:", e);
-        updateSyncStatus("غير متصل", "error");
-    });
+    fbDocRef.set({ [key]: val }, { merge: true })
+        .then(() => {
+            // الخادم أكّد استلام البيانات بنجاح
+            clearTimeout(_pendingWritesTimer);
+            updateSyncStatus("تم الحفظ بنجاح", "success");
+        })
+        .catch(e => {
+            clearTimeout(_pendingWritesTimer);
+            console.error("fbSave error:", e);
+            updateSyncStatus("فشل الحفظ — غير متصل", "error");
+        });
 }
 
 function runSilentMigration() {
@@ -1482,7 +1496,8 @@ function initFirebase() {
             const fromCache = doc.metadata.fromCache;
             const hasPendingWrites = doc.metadata.hasPendingWrites;
             
-            fbConnected = !fromCache; 
+            // متصل بالخادم إذا كانت البيانات قادمة منه مباشرة
+            if (!fromCache) fbConnected = true;
             
             if (doc.exists) {
                 const data = doc.data();
@@ -1517,10 +1532,18 @@ function initFirebase() {
                 }
             }
             
-            if (hasPendingWrites) {
-                updateSyncStatus("تم الحفظ (بانتظار المزامنة)", "warning"); 
-            } else {
-                updateSyncStatus("متزامن", "success"); 
+            // تحديث حالة المزامنة بناءً على حالة الخادم فقط
+            // hasPendingWrites=true: كتابة محلية لم تُؤكَّد بعد من الخادم
+            // نتركها لـ fbSave().then() لتحديث الحالة عند تأكيد الخادم
+            if (!hasPendingWrites && !fromCache) {
+                // تأكيد الخادم لآخر عملية كتابة
+                clearTimeout(_pendingWritesTimer);
+                updateSyncStatus("متزامن", "success");
+            } else if (fromCache && !hasPendingWrites) {
+                // بيانات مخزنة مؤقتاً (لا توجد كتابات معلقة)
+                if (!fbConnected) {
+                    updateSyncStatus("غير متصل (البيانات محفوظة)", "warning");
+                }
             }
             
             updateStorageUI();
@@ -1534,16 +1557,21 @@ function initFirebase() {
         },
         (error) => {
             console.error("Firestore error:", error);
+            fbConnected = false;
             updateSyncStatus("وضع غير متصل (محمي)", "warning");
             updateStorageUI();
         }
     );
 
     window.addEventListener('online', () => {
-        fbDocRef.get(); 
-        updateSyncStatus("جاري المزامنة...", "loading");
+        fbConnected = false; // سيُحدَّث عند أول snapshot من الخادم
+        updateSyncStatus("جاري استعادة الاتصال...", "loading");
+        // إعادة المزامنة تلقائياً عبر الـ SDK
+        fbDocRef.get({ source: 'server' }).catch(() => {});
     });
     window.addEventListener('offline', () => {
+        fbConnected = false;
+        clearTimeout(_pendingWritesTimer);
         updateSyncStatus("غير متصل (البيانات محفوظة)", "warning");
         updateStorageUI();
     });
@@ -1679,15 +1707,27 @@ function updateSyncStatus(msg, type="loading") {
          el.innerHTML = `<i class="fas fa-flask"></i> <span>وضع تجريبي</span>`;
          return;
     }
+    // إلغاء أي مؤقت سابق لتجنّب التعارض
+    clearTimeout(_syncStatusTimer);
     if(type==="loading") {
         el.innerHTML = `<i class="fas fa-circle-notch fa-spin" style="color:var(--primary)"></i> <span>${msg}</span>`;
+        el.style.borderColor = "";
     } else if (type==="success") {
-        el.innerHTML = `<i class="fas fa-check" style="color:var(--success)"></i> <span>${msg}</span>`;
-        setTimeout(() => el.innerHTML = `<i class="fas fa-cloud"></i> <span>متزامن</span>`, 3000);
+        el.innerHTML = `<i class="fas fa-check-circle" style="color:var(--success)"></i> <span style="color:var(--success)">${msg}</span>`;
+        el.style.borderColor = "var(--success)";
+        _syncStatusTimer = setTimeout(() => {
+            el.innerHTML = `<i class="fas fa-cloud" style="color:var(--text-muted)"></i> <span>متزامن</span>`;
+            el.style.borderColor = "";
+        }, 3000);
     } else if (type==="error") {
-        el.innerHTML = `<i class="fas fa-exclamation-circle" style="color:var(--danger)"></i> <span>${msg}</span>`;
+        el.innerHTML = `<i class="fas fa-exclamation-circle" style="color:var(--danger)"></i> <span style="color:var(--danger)">${msg}</span>`;
+        el.style.borderColor = "var(--danger)";
+    } else if (type==="warning") {
+        el.innerHTML = `<i class="fas fa-cloud-upload-alt" style="color:#d97706"></i> <span style="color:#d97706">${msg}</span>`;
+        el.style.borderColor = "#d97706";
     } else {
-        el.innerHTML = `<i class="fas fa-cloud"></i> <span>${msg}</span>`;
+        el.innerHTML = `<i class="fas fa-cloud" style="color:var(--text-muted)"></i> <span>${msg}</span>`;
+        el.style.borderColor = "";
     }
 }
 
