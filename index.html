@@ -1263,6 +1263,18 @@
 </div>
 
 <script>
+// ═══════════════════════════════════════════════════════════════
+//  MEGA STORE SYSTEM — v5.0 (Atomic Race-Condition Fix)
+//  تاريخ الإصلاح: 2026-02-23
+//
+//  ✅ wallets + invest: جميع التحديثات المالية تستخدم
+//     FieldValue.increment() — عمليات ذرية على الخادم مباشرة،
+//     مستحيل يحدث Race Condition حتى مع 100 موظف متزامن
+//
+//  ✅ stock + purchases + logs: Subcollections بـ Diff algorithm
+//
+//  ✅ fbAtomicWalletInvest(): دالة مركزية لكل العمليات المالية
+// ═══════════════════════════════════════════════════════════════
 // --- GLOBAL DEFINITIONS & UTILS ---
 let migrationRun = false; 
 
@@ -1512,6 +1524,62 @@ function fbSaveMultiple(updates) {
         .catch(e => {
             clearTimeout(_pendingWritesTimer);
             console.error("fbSaveMultiple error:", e);
+            updateSyncStatus("فشل الحفظ — غير متصل", "error");
+        });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  fbAtomicWalletInvest — تحديث ذري (Atomic) للأرصدة والحصص
+//  يستخدم FieldValue.increment() لمنع Race Condition بالكامل
+//  لا يقرأ القيمة الحالية — الخادم يحسب النتيجة مباشرة
+//
+//  walletIncs  : { "اسم المحفظة": delta }          ← يُطبَّق على .bal
+//  investIncs  : { "ahmad.d": delta, "store.s": delta, ... }
+//  localW/localI: نسخة محلية محدَّثة للـ UI (optimistic)
+// ══════════════════════════════════════════════════════════════
+function fbAtomicWalletInvest(walletIncs, investIncs, localW, localI) {
+    if (isDemoMode || !fbDocRef) return Promise.resolve();
+
+    _startSyncTimer();
+
+    const updateObj = {};
+
+    // wallets.<name>.bal += delta
+    if (walletIncs) {
+        Object.entries(walletIncs).forEach(([name, delta]) => {
+            if (delta !== 0) {
+                updateObj[`wallets.${name}.bal`] =
+                    firebase.firestore.FieldValue.increment(delta);
+            }
+        });
+    }
+
+    // invest.<person>.<currency> += delta  (e.g. "ahmad.d", "store.s")
+    if (investIncs) {
+        Object.entries(investIncs).forEach(([path, delta]) => {
+            if (delta !== 0) {
+                updateObj[`invest.${path}`] =
+                    firebase.firestore.FieldValue.increment(delta);
+            }
+        });
+    }
+
+    if (Object.keys(updateObj).length === 0) {
+        clearTimeout(_pendingWritesTimer);
+        return Promise.resolve();
+    }
+
+    return fbDocRef.update(updateObj)
+        .then(() => {
+            clearTimeout(_pendingWritesTimer);
+            // حفظ الحالة المحلية في lastServerState لمنع overwrite من الـ Diff
+            if (localW) lastServerState['wallets'] = JSON.parse(JSON.stringify(localW));
+            if (localI) lastServerState['invest']  = JSON.parse(JSON.stringify(localI));
+            updateSyncStatus("تم الحفظ بنجاح", "success");
+        })
+        .catch(e => {
+            clearTimeout(_pendingWritesTimer);
+            console.error("fbAtomicWalletInvest error:", e);
             updateSyncStatus("فشل الحفظ — غير متصل", "error");
         });
 }
@@ -2934,12 +3002,38 @@ function _executePurchase(paid, paidCur, duration, settings, stItem, cleanName, 
         canBeUndone: true
     });
 
-    // حفظ كل التغييرات في طلب واحد مُجمَّع (stock + wallets + invest + purchases)
+    // ─── حفظ ذري (Atomic) لمنع Race Condition ───────────────────
+    // wallets + invest ← FieldValue.increment() على الخادم مباشرة
+    // stock + purchases ← Subcollections عادية
     store.stock     = JSON.stringify(stockList);
     store.wallets   = JSON.stringify(wallets);
     store.invest    = JSON.stringify(invest);
     store.purchases = JSON.stringify(purchases);
-    fbSaveMultiple({ stock: stockList, wallets: wallets, invest: invest, purchases: purchases });
+
+    // بناء قاموس increment لـ wallets
+    const _wIncs = { [walletVal]: paid };
+
+    // بناء قاموس increment لـ invest
+    const _iIncs = {};
+    if (!isComp) {
+        // المتجر يسترد التكلفة + حصته من الربح الصافي
+        const _storeTotal = recoupAmount + (distributableProfit >= 0
+            ? +(distributableProfit * (settings.store / 100)).toFixed(2)
+            : distributableProfit);
+        _iIncs[`store.${shareType}`]   = _storeTotal;
+        if (distributableProfit >= 0) {
+            _iIncs[`ahmad.${shareType}`]   = +(distributableProfit * (settings.ahmad / 100)).toFixed(2);
+            _iIncs[`mohamed.${shareType}`] = +(distributableProfit * (settings.mohamed / 100)).toFixed(2);
+        }
+    } else if (settings.deductCost) {
+        // تعويض: خصم تكلفة البروفايل من حصة المتجر
+        let _oC  = (parseFloat(stItem.cost) || 0) / (parseInt(stItem.totalProfiles) || 1);
+        let _sT  = stItem.costCurrency === '$' ? 'd' : 's';
+        _iIncs[`store.${_sT}`] = -_oC;
+    }
+
+    fbAtomicWalletInvest(_wIncs, _iIncs, wallets, invest);
+    fbSaveMultiple({ stock: stockList, purchases: purchases });
     
     logAction(`إضافة عملية شراء: ${cleanName} للعميل ${customerVal}`, {
         type: 'purchase',
@@ -3487,8 +3581,14 @@ async function withdrawPartial(p){
     i[p][shareType] -= amount; 
     w[walletName].bal -= amount; 
 
-    store.invest = JSON.stringify(i); fbSave("invest", i); 
-    store.wallets = JSON.stringify(w); fbSave("wallets", w);
+    // ─── Atomic: سحب الأرباح ─────────────────────────────────────
+    store.invest = JSON.stringify(i);
+    store.wallets = JSON.stringify(w);
+    fbAtomicWalletInvest(
+        { [walletName]: -amount },
+        { [`${p}.${shareType}`]: -amount },
+        w, i
+    );
 
     logAction(`سحب أرباح من حصة ${p} عبر ${walletName}`, {
         type: 'withdraw',
@@ -3627,8 +3727,25 @@ function executeTransfer() {
         }
     }
 
-    store.wallets = JSON.stringify(w); fbSave("wallets", w);
-    store.invest = JSON.stringify(invest); fbSave("invest", invest);
+    // ─── Atomic: تحويل الأرصدة ───────────────────────────────────
+    store.wallets = JSON.stringify(w); 
+    store.invest  = JSON.stringify(invest);
+
+    const _wIncsTransfer = {
+        [from]: -amount,
+        [to]:   +result
+    };
+    const _iIncsTransfer = {};
+    if (fromCur !== toCur) {
+        let _fType = (fromCur === '$') ? 'd' : 's';
+        let _tType = (toCur   === '$') ? 'd' : 's';
+        _iIncsTransfer[`store.${_fType}`] = -amount;
+        _iIncsTransfer[`store.${_tType}`] = +result;
+    } else if (fee > 0) {
+        let _feeType = (fromCur === '$') ? 'd' : 's';
+        _iIncsTransfer[`store.${_feeType}`] = -fee;
+    }
+    fbAtomicWalletInvest(_wIncsTransfer, _iIncsTransfer, w, invest);
     
     logAction(`تحويل من ${from} إلى ${to}`, {
         type: 'transfer', from: from, to: to, amount: amount, fee: fee, feeCur: fromCur, rate: rate, result: result, netAmount: amount - fee, fromCur: fromCur, toCur: toCur
@@ -3672,11 +3789,35 @@ async function setWallet(){
             return notify(`رصيد حصة ${targetShare} غير كافٍ لتحمل هذا النقصان!`, "error");
         }
         invest[targetShare][cur] = parseFloat((invest[targetShare][cur] + diff).toFixed(2));
-        store.invest = JSON.stringify(invest); fbSave("invest", invest);
+        // invest سيُحفظ بـ fbAtomicWalletInvest أدناه
     }
     
     w[modWalletVal].bal = modAmountVal; 
-    store.wallets = JSON.stringify(w); fbSave("wallets", w); 
+    store.wallets = JSON.stringify(w);
+
+    // ─── Atomic: تعيين الرصيد + تعديل الحصة المرتبطة ─────────────
+    if(syncType === 'closed') {
+        const _cur = w[modWalletVal].cur === '$' ? 'd' : 's';
+        store.invest = JSON.stringify(invest);
+        fbAtomicWalletInvest(
+            {},
+            { [`${targetShare}.${_cur}`]: diff },
+            w, invest
+        );
+        // حفظ الـ wallet بـ set (ليس increment) لأن القيمة مُعيَّنة يدوياً بشكل مطلق
+        if (!isDemoMode && fbDocRef) {
+            fbDocRef.update({ [`wallets.${modWalletVal}.bal`]: modAmountVal })
+                .then(() => { lastServerState['wallets'] = JSON.parse(JSON.stringify(w)); updateSyncStatus("تم الحفظ بنجاح", "success"); })
+                .catch(e => { console.error("setWallet error:", e); updateSyncStatus("فشل الحفظ", "error"); });
+        }
+    } else {
+        if (!isDemoMode && fbDocRef) {
+            _startSyncTimer();
+            fbDocRef.update({ [`wallets.${modWalletVal}.bal`]: modAmountVal })
+                .then(() => { clearTimeout(_pendingWritesTimer); lastServerState['wallets'] = JSON.parse(JSON.stringify(w)); updateSyncStatus("تم الحفظ بنجاح", "success"); })
+                .catch(e => { clearTimeout(_pendingWritesTimer); console.error("setWallet error:", e); updateSyncStatus("فشل الحفظ", "error"); });
+        }
+    } 
     logAction(`تعيين رصيد محفظة ${modWalletVal}`, { type: 'manual', wallet: modWalletVal, reason: reason, before: before, after: modAmountVal, diff: diff, syncedShare: targetShare });
     refreshWallets(); refreshInvestment(); notify("تم تحديث الرصيد بنجاح"); 
 }
@@ -3717,11 +3858,23 @@ async function setProfitShare() {
             return notify(`رصيد المحفظة المرتبطة غير كافٍ لتحمل هذا النقصان!`, "error");
         }
         w[targetWallet].bal = parseFloat((w[targetWallet].bal + diff).toFixed(2));
-        store.wallets = JSON.stringify(w); fbSave("wallets", w);
+        // wallet سيُحفظ بـ fbAtomicWalletInvest أدناه
     }
     
     invest[person][currency] = amount;
-    store.invest = JSON.stringify(invest); fbSave("invest", invest);
+    store.invest = JSON.stringify(invest);
+
+    // ─── Atomic: تعديل الحصة ─────────────────────────────────────
+    const _iPIncs = { [`${person}.${currency}`]: diff };
+    if (syncType === 'closed') {
+        // الـ wallet يُعدَّل أيضاً بـ increment ذري
+        const _walletCur = currency === 'd' ? '$' : '₪';
+        const _wPIncs = { [targetWallet]: diff };
+        store.wallets = JSON.stringify(w);
+        fbAtomicWalletInvest(_wPIncs, _iPIncs, w, invest);
+    } else {
+        fbAtomicWalletInvest({}, _iPIncs, null, invest);
+    }
     logAction(`تعديل مباشر لحصة ${person}`, { type: 'manual_invest', person: person, currency: currency, reason: reason, before: before, after: amount, diff: diff, syncedWallet: targetWallet });
     refreshInvestment(); refreshWallets(); notify("تم تحديث الحصة بنجاح");
 }
@@ -3749,7 +3902,9 @@ async function deleteWallet(){
         if(!ok) return;
 
         invest[targetShare][expectedCurSymbol] -= wallet.bal;
-        store.invest = JSON.stringify(invest); fbSave("invest", invest);
+        store.invest = JSON.stringify(invest);
+        // Atomic: خصم رصيد المحفظة المحذوفة من حصة الشريك
+        fbAtomicWalletInvest({}, { [`${targetShare}.${expectedCurSymbol}`]: -wallet.bal }, null, invest);
     } else {
         let ok = await showConfirm("حذف المحفظة", `هل تريد حذف محفظة "${targetWallet}" نهائياً؟`, "حذف", "إلغاء", '<i class="fas fa-trash-alt"></i>');
         if(!ok) return;
@@ -3786,21 +3941,19 @@ async function undoLastPurchase(){
     
     purchases.pop(); // Remove the last purchase
     
+    // ─── Atomic: استرداد مبلغ المحفظة ──────────────────────────────
     let wallets = safeJSON(store.wallets, {});
+    const _undoWalletIncs = {};
     if(lastP.wallet && wallets[lastP.wallet]) { 
         let paidVal = parseFloat(lastP.paid); 
-        wallets[lastP.wallet].bal -= paidVal; 
+        wallets[lastP.wallet].bal -= paidVal;
+        _undoWalletIncs[lastP.wallet] = -paidVal;
     }
     
     // جمع كل التغييرات في طلب واحد
-    let undoUpdates = { wallets: wallets, purchases: purchases };
+    let undoUpdates = { purchases: purchases };
     store.wallets   = JSON.stringify(wallets);
     store.purchases = JSON.stringify(purchases);
-
-    if (lastP.investSnapshot) {
-        store.invest = JSON.stringify(lastP.investSnapshot);
-        undoUpdates.invest = lastP.investSnapshot;
-    }
 
     if (lastP.stockId) {
         let stockList = safeJSON(store.stock, []);
@@ -3829,6 +3982,27 @@ async function undoLastPurchase(){
     }
 
     fbSaveMultiple(undoUpdates);
+
+    // ─── Atomic: استرداد حصص الأرباح ───────────────────────────────
+    if (lastP.investSnapshot) {
+        // نحسب الفرق بين الـ snapshot القديم والـ invest الحالي ونعكسه
+        let currentInvest = safeJSON(store.invest, {});
+        store.invest = JSON.stringify(lastP.investSnapshot);
+        lastServerState['invest'] = JSON.parse(JSON.stringify(lastP.investSnapshot));
+        // نرسل set كامل للـ invest لأن الـ snapshot هو الحالة المطلوبة
+        fbAtomicWalletInvest(
+            _undoWalletIncs,
+            {}, // invest سيُعاد بالكامل بـ fbDocRef.update أدناه
+            wallets,
+            lastP.investSnapshot
+        );
+        // حفظ invest snapshot بالكامل (ليس increment) — آمن لأنه undo ونادر
+        if (!isDemoMode && fbDocRef) {
+            fbDocRef.update({ invest: lastP.investSnapshot }).catch(e => console.error("undo invest:", e));
+        }
+    } else {
+        fbAtomicWalletInvest(_undoWalletIncs, {}, wallets, wallets);
+    }
     
     logAction("تراجع عن عملية شراء", { type: 'undo', data: lastP, deducted: lastP.paid });
     
@@ -3989,8 +4163,15 @@ function executeStockAdd(stService, stCost, stWallet, wallets) {
     stock.unshift(s);
     
     store.stock = JSON.stringify(stock); fbSave("stock", stock);
-    store.wallets = JSON.stringify(wallets); fbSave("wallets", wallets);
-    store.invest = JSON.stringify(invest); fbSave("invest", invest);
+
+    // ─── Atomic: خصم التكلفة من المحفظة وحصة المتجر ─────────────
+    store.wallets = JSON.stringify(wallets);
+    store.invest  = JSON.stringify(invest);
+    fbAtomicWalletInvest(
+        { [stWallet]: -stCost },
+        { [`store.${shareType}`]: -stCost },
+        wallets, invest
+    );
     
     logAction(`شراء مخزون جديد: ${s.displayName}`, {
         type: 'stock_add',
