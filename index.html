@@ -1352,9 +1352,11 @@ const ITEMS_PER_PAGE = 50;
 // ─── تصنيف مفاتيح البيانات ──────────────────────────────────────
 // SCALAR: يُخزَّن كحقل في المستند الرئيسي (wallets وinvest وsettings)
 // ARRAY:  يُخزَّن كـ Subcollection — كل عنصر وثيقة Firestore مستقلة
-const SCALAR_KEYS = ["wallets", "settings", "invest"];
+// services: مصفوفة strings بسيطة ← تُخزَّن كحقل في المستند الرئيسي (Scalar)
+// لا تحتوي على IDs فلا تصلح كـ Subcollection
+const SCALAR_KEYS = ["wallets", "settings", "invest", "services"];
 const ARRAY_KEYS  = ["purchases", "stock", "users", "activityLog",
-                     "todoList", "generalNotes", "discounts", "services"];
+                     "todoList", "generalNotes", "discounts"];
 const STORE_KEYS  = [...SCALAR_KEYS, ...ARRAY_KEYS];
 
 // --- UPDATED DIALOG SYSTEM ---
@@ -1584,7 +1586,7 @@ function fbAtomicWalletInvest(walletIncs, investIncs, localW, localI) {
         });
 }
 
-// ── حفظ حقل قياسي (object) في المستند الرئيسي ────────────────
+// ── حفظ حقل قياسي (object أو array) في المستند الرئيسي ────────
 function _fbSaveScalar(key, val) {
     _startSyncTimer();
     fbDocRef.set({ [key]: val }, { merge: true })
@@ -1732,6 +1734,7 @@ async function migrateToV2(oldData) {
     updateSyncStatus("جاري الترحيل...", "loading");
 
     try {
+        // فقط ARRAY_KEYS الحقيقية (بدون services)
         const MIGRATE_KEYS = ARRAY_KEYS;
 
         for (const key of MIGRATE_KEYS) {
@@ -1764,6 +1767,12 @@ async function migrateToV2(oldData) {
             if (oldData[k] !== undefined)
                 cleanupObj[k] = firebase.firestore.FieldValue.delete();
         });
+        // services كانت مصفوفة strings في V1 → تبقى كـ scalar field
+        if (Array.isArray(oldData.services)) {
+            cleanupObj.services = oldData.services;
+            store.services = JSON.stringify(oldData.services);
+            lastServerState['services'] = JSON.parse(JSON.stringify(oldData.services));
+        }
         await fbDocRef.update(cleanupObj);
 
         console.log("✅ الترحيل إلى V2 اكتمل!");
@@ -1814,7 +1823,7 @@ function initFirebase() {
             if (doc.exists) {
                 const data = doc.data();
 
-                // تحديث الـ store للحقول القياسية فقط
+                // تحديث الـ store للحقول القياسية فقط (بما فيها services)
                 SCALAR_KEYS.forEach(k => {
                     if (data[k] !== undefined) {
                         const newStr = JSON.stringify(data[k]);
@@ -1967,6 +1976,7 @@ function _initNewDatabase() {
         wallets:      defaults.wallets,
         settings:     defaults.settings,
         invest:       defaults.invest,
+        services:     defaults.services,
         _v2migrated:  true
     }, { merge: true }).catch(e => console.error(e));
 
@@ -1979,7 +1989,8 @@ function getDefaultData() {
     return {
         wallets:  safeJSON(store.wallets,  {"جوال باي — سعاد":{bal:0,cur:"₪",active:true},"جوال باي — محمد":{bal:0,cur:"₪",active:true},"بال باي — أحمد":{bal:0,cur:"₪",active:true},"بايننس — احمد":{bal:0,cur:"$",active:true}}),
         invest:   safeJSON(store.invest,   {ahmad:{d:0,s:0},mohamed:{d:0,s:0},store:{d:0,s:0}}),
-        settings: safeJSON(store.settings, {ahmad:35,mohamed:35,store:30,deductCost:true,exchangeRate:0,logsVis:"all",discountEnabled:true,discountChance:25,discountMin:10,discountMax:20,validityMin:15,validityMax:45})
+        settings: safeJSON(store.settings, {ahmad:35,mohamed:35,store:30,deductCost:true,exchangeRate:0,logsVis:"all",discountEnabled:true,discountChance:25,discountMin:10,discountMax:20,validityMin:15,validityMax:45}),
+        services: safeJSON(store.services, [])
     };
 }
 
@@ -2157,7 +2168,7 @@ function init(){
     if(!store.settings) store.settings = JSON.stringify({ahmad: 35, mohamed: 35, store: 30, deductCost: true, exchangeRate: 0, logsVis: 'all', discountEnabled:true, discountChance:25, discountMin:10, discountMax:20, validityMin:15, validityMax:45}); 
     if(!store.activityLog) store.activityLog = "[]"; 
     if(!store.stock) store.stock = "[]"; 
-    if(!store.services) store.services = "[]"; 
+    if(!store.services) store.services = "[]";
     if(!store.discounts) store.discounts = "[]"; 
 
     let isDark = localStorage.getItem("darkMode") === "true";
@@ -4518,22 +4529,27 @@ function renderServicesSettings() {
 function addService() {
     let inp = document.getElementById("newServiceName");
     let val = inp.value.trim();
-    if(!val) return;
+    if(!val) return notify("أدخل اسم الخدمة", "error");
     let list = safeJSON(store.services, []);
-    if(!list.includes(val)) {
-        list.push(val);
-        store.services = JSON.stringify(list); fbSave("services", list);
-        logAction(`إضافة خدمة جديدة: ${val}`);
-        renderServicesSettings();
-        
-    }
+    if(list.includes(val)) return notify("الخدمة موجودة مسبقاً", "error");
+    list.push(val);
+    store.services = JSON.stringify(list); fbSave("services", list);
+    logAction(`إضافة خدمة جديدة: ${val}`);
+    renderServicesSettings();
+    loadServices();
+    loadPurchaseStock();
+    notify("تمت إضافة الخدمة بنجاح");
     inp.value = "";
 }
 function deleteService(idx) {
     let list = safeJSON(store.services, []);
-    list.splice(idx, 1);
+    let removed = list.splice(idx, 1);
     store.services = JSON.stringify(list); fbSave("services", list);
+    logAction(`حذف خدمة: ${removed[0] || ''}`);
     renderServicesSettings();
+    loadServices();
+    loadPurchaseStock();
+    notify("تم حذف الخدمة");
 }
 
 // ─────────────────────────────────────────────
