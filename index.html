@@ -1320,10 +1320,14 @@ const firebaseConfig = {
 
 // ─── In-Memory Store (replaces localStorage for app data) ────────
 let store = {};
-let fbDocRef = null;
+let db = null;                   // مرجع Firestore العالمي
+let fbDocRef = null;             // مرجع المستند الرئيسي megastore/data
 let fbConnected = false;
-let _syncStatusTimer = null; // لإدارة مؤقت حالة المزامنة
-let _pendingWritesTimer = null; // لرصد الكتابات المعلقة طويلاً
+let lastServerState = {};        // آخر حالة مؤكدة من الخادم — أساس عملية الـ Diff
+let _syncStatusTimer = null;
+let _pendingWritesTimer = null;
+let _refreshAllTimer = null;     // لـ Debounce استدعاءات refreshAll المتكررة
+let _collectionsLoaded = {};     // يتتبع أي Subcollections أتمت التحميل الأولي
 let myProfitChart = null;
 let mySalesChart = null;
 let currentUser = null; 
@@ -1332,7 +1336,14 @@ let currentStockTab = 'active';
 let currentLogsTab = 'financial';
 let currentPage = { logs: 1, expiring: 1, stock: 1, history: 1, discounts: 1 };
 const ITEMS_PER_PAGE = 50;
-const STORE_KEYS = ["users","wallets","purchases","invest","settings","generalNotes","todoList","activityLog","stock","services","discounts"];
+
+// ─── تصنيف مفاتيح البيانات ──────────────────────────────────────
+// SCALAR: يُخزَّن كحقل في المستند الرئيسي (wallets وinvest وsettings)
+// ARRAY:  يُخزَّن كـ Subcollection — كل عنصر وثيقة Firestore مستقلة
+const SCALAR_KEYS = ["wallets", "settings", "invest"];
+const ARRAY_KEYS  = ["purchases", "stock", "users", "activityLog",
+                     "todoList", "generalNotes", "discounts", "services"];
+const STORE_KEYS  = [...SCALAR_KEYS, ...ARRAY_KEYS];
 
 // --- UPDATED DIALOG SYSTEM ---
 let _confirmResolve = null;
@@ -1407,31 +1418,185 @@ document.addEventListener("keydown", e => {
     }
 });
 
-// Save a single key to Firebase
-function fbSave(key, val) {
-    if (isDemoMode) return;
-    if (!fbDocRef) return;
-    updateSyncStatus("جاري الحفظ...", "loading");
+// ═══════════════════════════════════════════════════════════════
+//  نظام المزامنة الذكي V2
+//  - البيانات القياسية (wallets/settings/invest) ← حقول في المستند الرئيسي
+//  - مصفوفات البيانات ← Subcollections (كل عنصر وثيقة مستقلة)
+//  - رفع: يُحسب الـ Diff ويُرسَل ما تغيّر فقط (إضافة/تعديل/حذف)
+//  - استقبال: docChanges() يُطبّق التغييرات الجزئية فقط على store
+//  - ترحيل: migrateToV2() يحوّل البيانات القديمة تلقائياً
+// ═══════════════════════════════════════════════════════════════
 
-    // مؤقت احتياطي: إذا مرّت 10 ثوانٍ دون تأكيد من الخادم، نُعلم المستخدم
-    clearTimeout(_pendingWritesTimer);
-    _pendingWritesTimer = setTimeout(() => {
-        updateSyncStatus("تأخر في الاتصال، تحقق من الإنترنت", "error");
-    }, 10000);
-    
-    fbDocRef.set({ [key]: val }, { merge: true })
+// ── أداة مشتركة: مُعرِّف فريد ────────────────────────────────
+function genId() {
+    return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+// ── Debounce لـ refreshAll (يمنع الاستدعاءات المتكررة) ────────
+function debouncedRefreshAll() {
+    clearTimeout(_refreshAllTimer);
+    _refreshAllTimer = setTimeout(() => { if (currentUser) refreshAll(); }, 120);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  fbSave — نقطة الدخول الرئيسية للحفظ
+//  يُوجِّه الطلب إلى المنطق المناسب حسب نوع المفتاح
+// ══════════════════════════════════════════════════════════════
+function fbSave(key, val) {
+    if (isDemoMode || !fbDocRef) return;
+    if (SCALAR_KEYS.includes(key)) {
+        _fbSaveScalar(key, val);
+    } else if (ARRAY_KEYS.includes(key)) {
+        _fbSaveArrayDiff(key, Array.isArray(val) ? val : []);
+    }
+}
+
+// ── حفظ متعدد في طلب واحد (لعمليات تُعدِّل عدة مفاتيح دفعة) ─
+function fbSaveMultiple(updates) {
+    if (isDemoMode || !fbDocRef) return;
+
+    _startSyncTimer();
+
+    const scalarUpdates = {};
+    const allBatchOps   = [];
+
+    Object.entries(updates).forEach(([key, val]) => {
+        if (SCALAR_KEYS.includes(key)) {
+            scalarUpdates[key] = val;
+        } else if (ARRAY_KEYS.includes(key)) {
+            const oldArr  = lastServerState[key] || [];
+            const newArr  = Array.isArray(val) ? val : [];
+            const collRef = fbDocRef.collection(key);
+
+            newArr.forEach(item => {
+                if (!item.id) item.id = genId();
+                const old = oldArr.find(x => x.id === item.id);
+                if (!old || JSON.stringify(old) !== JSON.stringify(item)) {
+                    allBatchOps.push({ type: 'set', ref: collRef.doc(item.id), data: item });
+                }
+            });
+            oldArr.forEach(item => {
+                if (item.id && !newArr.find(x => x.id === item.id)) {
+                    allBatchOps.push({ type: 'delete', ref: collRef.doc(item.id) });
+                }
+            });
+        }
+    });
+
+    const promises = [];
+
+    if (Object.keys(scalarUpdates).length > 0) {
+        promises.push(fbDocRef.set(scalarUpdates, { merge: true }));
+    }
+
+    // Firestore batch limit = 500 عملية
+    for (let i = 0; i < allBatchOps.length; i += 400) {
+        const batch = db.batch();
+        allBatchOps.slice(i, i + 400).forEach(op => {
+            if (op.type === 'set') batch.set(op.ref, op.data);
+            else                   batch.delete(op.ref);
+        });
+        promises.push(batch.commit());
+    }
+
+    if (promises.length === 0) { clearTimeout(_pendingWritesTimer); return; }
+
+    Promise.all(promises)
         .then(() => {
-            // الخادم أكّد استلام البيانات بنجاح
             clearTimeout(_pendingWritesTimer);
+            Object.entries(updates).forEach(([k, v]) => {
+                lastServerState[k] = JSON.parse(JSON.stringify(v));
+            });
             updateSyncStatus("تم الحفظ بنجاح", "success");
         })
         .catch(e => {
             clearTimeout(_pendingWritesTimer);
-            console.error("fbSave error:", e);
+            console.error("fbSaveMultiple error:", e);
             updateSyncStatus("فشل الحفظ — غير متصل", "error");
         });
 }
 
+// ── حفظ حقل قياسي (object) في المستند الرئيسي ────────────────
+function _fbSaveScalar(key, val) {
+    _startSyncTimer();
+    fbDocRef.set({ [key]: val }, { merge: true })
+        .then(() => {
+            clearTimeout(_pendingWritesTimer);
+            lastServerState[key] = JSON.parse(JSON.stringify(val));
+            updateSyncStatus("تم الحفظ بنجاح", "success");
+        })
+        .catch(e => {
+            clearTimeout(_pendingWritesTimer);
+            console.error("fbSave scalar error:", e);
+            updateSyncStatus("فشل الحفظ — غير متصل", "error");
+        });
+}
+
+// ── حفظ مصفوفة: يحسب الـ Diff ويرسل ما تغيّر فقط ────────────
+function _fbSaveArrayDiff(key, newArr) {
+    const oldArr  = lastServerState[key] || [];
+    const collRef = fbDocRef.collection(key);
+
+    const toWrite  = [];
+    const toDelete = [];
+
+    newArr.forEach(item => {
+        if (!item.id) item.id = genId();
+        const old = oldArr.find(x => x.id === item.id);
+        if (!old || JSON.stringify(old) !== JSON.stringify(item)) {
+            toWrite.push(item);
+        }
+    });
+    oldArr.forEach(item => {
+        if (item.id && !newArr.find(x => x.id === item.id)) {
+            toDelete.push(item.id);
+        }
+    });
+
+    if (toWrite.length === 0 && toDelete.length === 0) return;
+
+    _startSyncTimer();
+
+    const allOps = [
+        ...toWrite.map(item => ({ type: 'set',    ref: collRef.doc(item.id), data: item })),
+        ...toDelete.map(id   => ({ type: 'delete', ref: collRef.doc(id) }))
+    ];
+
+    const batches = [];
+    for (let i = 0; i < allOps.length; i += 400) {
+        const batch = db.batch();
+        allOps.slice(i, i + 400).forEach(op => {
+            if (op.type === 'set') batch.set(op.ref, op.data);
+            else                   batch.delete(op.ref);
+        });
+        batches.push(batch.commit());
+    }
+
+    Promise.all(batches)
+        .then(() => {
+            clearTimeout(_pendingWritesTimer);
+            lastServerState[key] = JSON.parse(JSON.stringify(newArr));
+            updateSyncStatus("تم الحفظ بنجاح", "success");
+        })
+        .catch(e => {
+            clearTimeout(_pendingWritesTimer);
+            console.error(`fbSave array (${key}) error:`, e);
+            updateSyncStatus("فشل الحفظ — غير متصل", "error");
+        });
+}
+
+// ── مؤقت الانتظار المشترك ─────────────────────────────────────
+function _startSyncTimer() {
+    updateSyncStatus("جاري الحفظ...", "loading");
+    clearTimeout(_pendingWritesTimer);
+    _pendingWritesTimer = setTimeout(() => {
+        updateSyncStatus("تأخر في الاتصال، تحقق من الإنترنت", "error");
+    }, 10000);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  runSilentMigration — ضمان IDs وتنسيق التواريخ (V1 → V1.1)
+// ══════════════════════════════════════════════════════════════
 function runSilentMigration() {
     let changed = false;
     let p = safeJSON(store.purchases, []);
@@ -1441,132 +1606,265 @@ function runSilentMigration() {
     let u = safeJSON(store.users, []);
 
     const fixDate = (dStr) => {
-        if(!dStr) return dStr;
+        if (!dStr) return dStr;
         let parts = dStr.split('-');
-        if(parts.length === 3) {
-            let m = parts[1].length === 1 ? '0'+parts[1] : parts[1];
-            let d = parts[2].length === 1 ? '0'+parts[2] : parts[2];
+        if (parts.length === 3) {
+            let m = parts[1].length === 1 ? '0' + parts[1] : parts[1];
+            let d = parts[2].length === 1 ? '0' + parts[2] : parts[2];
             return `${parts[0]}-${m}-${d}`;
         }
         return dStr;
     };
 
     const ensureId = (item) => {
-        if(!item.id) { item.id = 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2,9); return true; }
+        if (!item.id) { item.id = genId(); return true; }
         return false;
     };
 
-    p.forEach(x => { 
-        let fd = fixDate(x.date); 
-        if(fd !== x.date) { x.date = fd; changed = true; } 
-        if(ensureId(x)) changed = true; 
+    // ضمان حقل _ts لترتيب سجل النشاط
+    let logs = safeJSON(store.activityLog, []);
+    let logChanged = false;
+    logs.forEach(x => {
+        if (!x.id)  { x.id  = genId();     logChanged = true; }
+        if (!x._ts) { x._ts = Date.now();  logChanged = true; }
     });
-    s.forEach(x => { 
-        let fd = fixDate(x.soldDate); 
-        if(x.soldDate && fd !== x.soldDate) { x.soldDate = fd; changed = true; } 
-        if(ensureId(x)) changed = true; 
-    });
-    n.forEach(x => { if(ensureId(x)) changed = true; });
-    t.forEach(x => { if(ensureId(x)) changed = true; });
-    u.forEach(x => { if(ensureId(x)) changed = true; });
 
-    if(changed) {
-        let updates = {};
-        updates.purchases = p; store.purchases = JSON.stringify(p);
-        updates.stock = s; store.stock = JSON.stringify(s);
-        updates.generalNotes = n; store.generalNotes = JSON.stringify(n);
-        updates.todoList = t; store.todoList = JSON.stringify(t);
-        updates.users = u; store.users = JSON.stringify(u);
-        fbDocRef.set(updates, {merge:true});
+    p.forEach(x => {
+        let fd = fixDate(x.date);
+        if (fd !== x.date) { x.date = fd; changed = true; }
+        if (ensureId(x)) changed = true;
+    });
+    s.forEach(x => {
+        let fd = fixDate(x.soldDate);
+        if (x.soldDate && fd !== x.soldDate) { x.soldDate = fd; changed = true; }
+        if (ensureId(x)) changed = true;
+    });
+    n.forEach(x => { if (ensureId(x)) changed = true; });
+    t.forEach(x => { if (ensureId(x)) changed = true; });
+    u.forEach(x => { if (ensureId(x)) changed = true; });
+
+    if (changed) {
+        store.purchases    = JSON.stringify(p); fbSave("purchases",    p);
+        store.stock        = JSON.stringify(s); fbSave("stock",        s);
+        store.generalNotes = JSON.stringify(n); fbSave("generalNotes", n);
+        store.todoList     = JSON.stringify(t); fbSave("todoList",     t);
+        store.users        = JSON.stringify(u); fbSave("users",        u);
+    }
+    if (logChanged) {
+        store.activityLog = JSON.stringify(logs); fbSave("activityLog", logs);
     }
 }
 
+// ══════════════════════════════════════════════════════════════
+//  migrateToV2 — ترحيل البيانات القديمة (Flat → Subcollections)
+//  يعمل مرة واحدة فقط عند اكتشاف بيانات بالصيغة القديمة
+// ══════════════════════════════════════════════════════════════
+async function migrateToV2(oldData) {
+    console.log("⏳ بدء الترحيل إلى V2 (Subcollections)...");
+    updateSyncStatus("جاري الترحيل...", "loading");
+
+    try {
+        const MIGRATE_KEYS = ARRAY_KEYS;
+
+        for (const key of MIGRATE_KEYS) {
+            const arr = oldData[key];
+            if (!Array.isArray(arr) || arr.length === 0) continue;
+
+            // ضمان IDs لكل العناصر
+            arr.forEach(item => { if (!item.id) item.id = genId(); });
+            // ضمان _ts لسجل النشاط
+            if (key === 'activityLog') {
+                arr.forEach(item => { if (!item._ts) item._ts = Date.now(); });
+            }
+
+            const collRef = fbDocRef.collection(key);
+            for (let i = 0; i < arr.length; i += 400) {
+                const batch = db.batch();
+                arr.slice(i, i + 400).forEach(item => batch.set(collRef.doc(item.id), item));
+                await batch.commit();
+            }
+
+            // تحديث الـ store والـ lastServerState فوراً
+            const sorted = _sortCollection(key, arr);
+            store[key]           = JSON.stringify(sorted);
+            lastServerState[key] = JSON.parse(JSON.stringify(sorted));
+        }
+
+        // حذف الحقول القديمة من المستند الرئيسي وتسجيل الترحيل
+        const cleanupObj = { _v2migrated: true };
+        MIGRATE_KEYS.forEach(k => {
+            if (oldData[k] !== undefined)
+                cleanupObj[k] = firebase.firestore.FieldValue.delete();
+        });
+        await fbDocRef.update(cleanupObj);
+
+        console.log("✅ الترحيل إلى V2 اكتمل!");
+        runSilentMigration(); // تشغيل هجرة V1.1 بعد V2
+        updateSyncStatus("تم الترحيل بنجاح", "success");
+
+    } catch (e) {
+        console.error("❌ خطأ في الترحيل:", e);
+        updateSyncStatus("خطأ أثناء الترحيل", "error");
+    }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  ترتيب Subcollection عند التحميل (الأحدث أولاً)
+// ══════════════════════════════════════════════════════════════
+function _sortCollection(key, arr) {
+    if (key === 'activityLog') {
+        return arr.slice().sort((a, b) => (b._ts || 0) - (a._ts || 0));
+    }
+    if (key === 'purchases') {
+        return arr.slice().sort((a, b) => {
+            if (a.date && b.date && a.date !== b.date) return b.date.localeCompare(a.date);
+            return (b.id || '').localeCompare(a.id || '');
+        });
+    }
+    return arr;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  initFirebase — تهيئة Firebase والمستمعين
+// ══════════════════════════════════════════════════════════════
 function initFirebase() {
     const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore(app);
-
+    db       = firebase.firestore(app);
     fbDocRef = db.collection("megastore").doc("data");
 
     updateSyncStatus("جاري الاتصال...", "loading");
 
-    // Real-time listener
+    // ── 1. مستمع البيانات القياسية (wallets / settings / invest) ─
     fbDocRef.onSnapshot(
         { includeMetadataChanges: true },
-        (doc) => {
-            const fromCache = doc.metadata.fromCache;
+        async (doc) => {
+            const fromCache      = doc.metadata.fromCache;
             const hasPendingWrites = doc.metadata.hasPendingWrites;
-            
-            // متصل بالخادم إذا كانت البيانات قادمة منه مباشرة
+
             if (!fromCache) fbConnected = true;
-            
+
             if (doc.exists) {
                 const data = doc.data();
-                STORE_KEYS.forEach(k => {
+
+                // تحديث الـ store للحقول القياسية فقط
+                SCALAR_KEYS.forEach(k => {
                     if (data[k] !== undefined) {
-                        store[k] = JSON.stringify(data[k]);
+                        const newStr = JSON.stringify(data[k]);
+                        if (store[k] !== newStr) {
+                            store[k] = newStr;
+                            if (!fromCache) lastServerState[k] = JSON.parse(JSON.stringify(data[k]));
+                        }
                     }
                 });
-                
-                if(!fromCache && !migrationRun) {
-                    runSilentMigration();
+
+                // ─ ترحيل البيانات القديمة (يعمل مرة واحدة فقط) ─
+                if (!fromCache && !migrationRun) {
                     migrationRun = true;
+                    if (!data._v2migrated) {
+                        // قاعدة بيانات قديمة: ترحيل إلى V2
+                        await migrateToV2(data);
+                    } else {
+                        // قاعدة V2: هجرة بيانات بسيطة فقط
+                        runSilentMigration();
+                    }
                 }
 
-                if (currentUser) {
-                    let latestUsers = safeJSON(store.users, []);
-                    let me = latestUsers.find(x => x.username === currentUser.username);
-                    if (!me || me.status === 'banned' || me.password !== currentUser.password) {
-                        alert("عذراً، تم تغيير بيانات حسابك أو تم حظرك بواسطة الإدارة. سيتم تسجيل الخروج الآن.");
-                        location.reload();
-                        return;
-                    }
-                    if (me.role !== currentUser.role) {
-                        currentUser.role = me.role;
-                        applyRBAC();
-                    }
-                    refreshAll();
+                // ─ التحقق من صلاحية المستخدم الحالي ─
+                if (currentUser && !fromCache && !hasPendingWrites) {
+                    _validateCurrentUser();
                 }
-            } else {
-                if (!fromCache) {
-                    fbDocRef.set(getDefaultData(), {merge: true}).catch(e => console.error(e));
-                }
+
+            } else if (!fromCache) {
+                // قاعدة بيانات جديدة — إنشاء البنية الأساسية
+                _initNewDatabase();
             }
-            
-            // تحديث حالة المزامنة بناءً على حالة الخادم فقط
-            // hasPendingWrites=true: كتابة محلية لم تُؤكَّد بعد من الخادم
-            // نتركها لـ fbSave().then() لتحديث الحالة عند تأكيد الخادم
+
+            // تحديث حالة المزامنة
             if (!hasPendingWrites && !fromCache) {
-                // تأكيد الخادم لآخر عملية كتابة
                 clearTimeout(_pendingWritesTimer);
                 updateSyncStatus("متزامن", "success");
-            } else if (fromCache && !hasPendingWrites) {
-                // بيانات مخزنة مؤقتاً (لا توجد كتابات معلقة)
-                if (!fbConnected) {
-                    updateSyncStatus("غير متصل (البيانات محفوظة)", "warning");
-                }
+            } else if (fromCache && !fbConnected) {
+                updateSyncStatus("غير متصل (البيانات محفوظة)", "warning");
             }
-            
+
             updateStorageUI();
-            
-            if (document.getElementById("loginCard").style.display === "none" || 
-                document.getElementById("loginLayer").style.display !== "none") {
-                if (document.getElementById("loginLayer").style.display !== "none") {
-                    document.getElementById("loginCard").style.display = "";
-                }
+
+            // إظهار بطاقة تسجيل الدخول بعد جاهزية البيانات
+            if (document.getElementById("loginLayer").style.display !== "none") {
+                document.getElementById("loginCard").style.display = "";
             }
         },
         (error) => {
-            console.error("Firestore error:", error);
+            console.error("Firestore scalar error:", error);
             fbConnected = false;
             updateSyncStatus("وضع غير متصل (محمي)", "warning");
             updateStorageUI();
         }
     );
 
+    // ── 2. مستمعو Subcollections (كل مفتاح مصفوفة مستمع مستقل) ─
+    ARRAY_KEYS.forEach(key => {
+        _collectionsLoaded[key] = false;
+        lastServerState[key]    = [];
+
+        fbDocRef.collection(key).onSnapshot(
+            { includeMetadataChanges: true },
+            (snapshot) => {
+                const fromCache      = snapshot.metadata.fromCache;
+                const hasPendingWrites = snapshot.metadata.hasPendingWrites;
+
+                if (!fromCache) fbConnected = true;
+
+                let arr = safeJSON(store[key], []);
+
+                if (!_collectionsLoaded[key]) {
+                    // ──── التحميل الأولي: استيعاب كل الوثائق ────
+                    _collectionsLoaded[key] = true;
+                    arr = snapshot.docs.map(d => d.data());
+                } else {
+                    // ──── تحديث تدريجي: تطبيق التغييرات فقط ────
+                    snapshot.docChanges().forEach(change => {
+                        const item = change.doc.data();
+                        if (change.type === 'added' || change.type === 'modified') {
+                            const idx = arr.findIndex(x => x.id === item.id);
+                            if (idx !== -1) arr[idx] = item;
+                            else arr.push(item);
+                        } else if (change.type === 'removed') {
+                            arr = arr.filter(x => x.id !== change.doc.id);
+                        }
+                    });
+                }
+
+                // ترتيب المصفوفة حسب نوعها
+                arr = _sortCollection(key, arr);
+
+                store[key] = JSON.stringify(arr);
+                if (!fromCache) {
+                    lastServerState[key] = JSON.parse(JSON.stringify(arr));
+                }
+
+                // ─ التحقق من المستخدمين عند تغيّر جدول users ─
+                if (key === 'users' && !fromCache && !hasPendingWrites && currentUser) {
+                    _validateCurrentUser();
+                }
+
+                // ─ تحديث الواجهة عند وصول بيانات من الخادم ─
+                if (!fromCache && !hasPendingWrites && currentUser) {
+                    debouncedRefreshAll();
+                }
+
+                updateStorageUI();
+            },
+            (error) => {
+                console.error(`Firestore collection (${key}) error:`, error);
+            }
+        );
+    });
+
+    // ── 3. معالجة الاتصال / الانقطاع ─────────────────────────
     window.addEventListener('online', () => {
-        fbConnected = false; // سيُحدَّث عند أول snapshot من الخادم
+        fbConnected = false;
         updateSyncStatus("جاري استعادة الاتصال...", "loading");
-        // إعادة المزامنة تلقائياً عبر الـ SDK
         fbDocRef.get({ source: 'server' }).catch(() => {});
     });
     window.addEventListener('offline', () => {
@@ -1577,19 +1875,43 @@ function initFirebase() {
     });
 }
 
+// ── دوال مساعدة لـ initFirebase ──────────────────────────────
+
+function _validateCurrentUser() {
+    let latestUsers = safeJSON(store.users, []);
+    let me = latestUsers.find(x => x.username === currentUser.username);
+    if (!me || me.status === 'banned' || me.password !== currentUser.password) {
+        alert("عذراً، تم تغيير بيانات حسابك أو تم حظرك بواسطة الإدارة. سيتم تسجيل الخروج الآن.");
+        location.reload();
+        return;
+    }
+    if (me.role !== currentUser.role) {
+        currentUser.role = me.role;
+        applyRBAC();
+    }
+    debouncedRefreshAll();
+}
+
+function _initNewDatabase() {
+    // قاعدة بيانات جديدة — إنشاء المستند الرئيسي بالقيم الافتراضية
+    const defaults = getDefaultData();
+    fbDocRef.set({
+        wallets:      defaults.wallets,
+        settings:     defaults.settings,
+        invest:       defaults.invest,
+        _v2migrated:  true
+    }, { merge: true }).catch(e => console.error(e));
+
+    // إنشاء المستخدم الافتراضي في Subcollection users
+    fbDocRef.collection('users').doc(DEFAULT_USER.id).set(DEFAULT_USER).catch(e => console.error(e));
+}
+
 function getDefaultData() {
+    // في V2 تُخزَّن المصفوفات كـ Subcollections، وهذه الدالة تُعيد الحقول القياسية فقط
     return {
-        users: safeJSON(store.users, [DEFAULT_USER]),
-        wallets: safeJSON(store.wallets, {"جوال باي — سعاد":{bal:0,cur:"₪",active:true},"جوال باي — محمد":{bal:0,cur:"₪",active:true},"بال باي — أحمد":{bal:0,cur:"₪",active:true},"بايننس — احمد":{bal:0,cur:"$",active:true}}),
-        purchases: safeJSON(store.purchases, []),
-        invest: safeJSON(store.invest, {ahmad:{d:0,s:0},mohamed:{d:0,s:0},store:{d:0,s:0}}),
-        settings: safeJSON(store.settings, {ahmad:35,mohamed:35,store:30,deductCost:true,exchangeRate:0,logsVis:"all", discountEnabled:true, discountChance:25, discountMin:10, discountMax:20, validityMin:15, validityMax:45}),
-        generalNotes: safeJSON(store.generalNotes, []),
-        todoList: safeJSON(store.todoList, []),
-        activityLog: safeJSON(store.activityLog, []),
-        stock: safeJSON(store.stock, []),
-        services: safeJSON(store.services, []),
-        discounts: safeJSON(store.discounts, [])
+        wallets:  safeJSON(store.wallets,  {"جوال باي — سعاد":{bal:0,cur:"₪",active:true},"جوال باي — محمد":{bal:0,cur:"₪",active:true},"بال باي — أحمد":{bal:0,cur:"₪",active:true},"بايننس — احمد":{bal:0,cur:"$",active:true}}),
+        invest:   safeJSON(store.invest,   {ahmad:{d:0,s:0},mohamed:{d:0,s:0},store:{d:0,s:0}}),
+        settings: safeJSON(store.settings, {ahmad:35,mohamed:35,store:30,deductCost:true,exchangeRate:0,logsVis:"all",discountEnabled:true,discountChance:25,discountMin:10,discountMax:20,validityMin:15,validityMax:45})
     };
 }
 
@@ -1735,9 +2057,11 @@ function logAction(actionDescription, details=null) {
     if(!currentUser) return;
     let logs = safeJSON(store.activityLog, []);
     logs.unshift({
-        user: currentUser.username,
-        action: actionDescription,
-        time: new Date().toLocaleString("ar-EG"),
+        id:      genId(),                             // لازم للـ Subcollection
+        _ts:     Date.now(),                          // للترتيب الزمني الدقيق
+        user:    currentUser.username,
+        action:  actionDescription,
+        time:    new Date().toLocaleString("ar-EG"),
         details: details 
     });
     if(logs.length > 500) logs = logs.slice(0, 500);
@@ -2586,8 +2910,6 @@ function _executePurchase(paid, paidCur, duration, settings, stItem, cleanName, 
     let stockList = safeJSON(store.stock, []);
     let stIdx = stockList.findIndex(x => x.id === stItem.id);
     if(stIdx !== -1) stockList[stIdx] = stItem;
-    store.stock = JSON.stringify(stockList); fbSave("stock", stockList);
-
     let nd = new Date();
     let nmm = (nd.getMonth()+1).toString().padStart(2,'0');
     let ndd = nd.getDate().toString().padStart(2,'0');
@@ -2611,10 +2933,13 @@ function _executePurchase(paid, paidCur, duration, settings, stItem, cleanName, 
         usedDiscountObj: usedDiscountObj,
         canBeUndone: true
     });
-    
-    store.wallets = JSON.stringify(wallets); fbSave("wallets", wallets);
-    store.invest = JSON.stringify(invest); fbSave("invest", invest);
-    store.purchases = JSON.stringify(purchases); fbSave("purchases", purchases);
+
+    // حفظ كل التغييرات في طلب واحد مُجمَّع (stock + wallets + invest + purchases)
+    store.stock     = JSON.stringify(stockList);
+    store.wallets   = JSON.stringify(wallets);
+    store.invest    = JSON.stringify(invest);
+    store.purchases = JSON.stringify(purchases);
+    fbSaveMultiple({ stock: stockList, wallets: wallets, invest: invest, purchases: purchases });
     
     logAction(`إضافة عملية شراء: ${cleanName} للعميل ${customerVal}`, {
         type: 'purchase',
@@ -3467,37 +3792,43 @@ async function undoLastPurchase(){
         wallets[lastP.wallet].bal -= paidVal; 
     }
     
-    store.wallets = JSON.stringify(wallets); fbSave("wallets", wallets);
-    store.purchases = JSON.stringify(purchases); fbSave("purchases", purchases);
-    
-    if(lastP.investSnapshot) { store.invest = JSON.stringify(lastP.investSnapshot); fbSave("invest", lastP.investSnapshot); }
-    
-    if(lastP.stockId) {
+    // جمع كل التغييرات في طلب واحد
+    let undoUpdates = { wallets: wallets, purchases: purchases };
+    store.wallets   = JSON.stringify(wallets);
+    store.purchases = JSON.stringify(purchases);
+
+    if (lastP.investSnapshot) {
+        store.invest = JSON.stringify(lastP.investSnapshot);
+        undoUpdates.invest = lastP.investSnapshot;
+    }
+
+    if (lastP.stockId) {
         let stockList = safeJSON(store.stock, []);
         let sItem = stockList.find(x => x.id === lastP.stockId);
-        if(sItem) {
+        if (sItem) {
             sItem.soldProfiles = Math.max(0, (sItem.soldProfiles || 0) - 1);
-            if(sItem.buyers && sItem.buyers.length > 0) sItem.buyers.pop(); 
-            if(sItem.status === 'sold') {
-                sItem.status = 'active';
-                delete sItem.soldDate;
-            }
-            store.stock = JSON.stringify(stockList); fbSave("stock", stockList);
+            if (sItem.buyers && sItem.buyers.length > 0) sItem.buyers.pop();
+            if (sItem.status === 'sold') { sItem.status = 'active'; delete sItem.soldDate; }
+            store.stock = JSON.stringify(stockList);
+            undoUpdates.stock = stockList;
         }
     }
 
-    if(lastP.usedDiscountObj) {
+    if (lastP.usedDiscountObj) {
         let dList = safeJSON(store.discounts, []);
         let existingIdx = dList.findIndex(x => x.id === lastP.usedDiscountObj.id);
-        if(existingIdx !== -1) {
+        if (existingIdx !== -1) {
             dList[existingIdx].usedCount = Math.max(0, (dList[existingIdx].usedCount || 1) - 1);
         } else {
             let restoredCoupon = lastP.usedDiscountObj;
             restoredCoupon.usedCount = Math.max(0, (restoredCoupon.maxUses || 1) - 1);
             dList.unshift(restoredCoupon);
         }
-        store.discounts = JSON.stringify(dList); fbSave("discounts", dList);
+        store.discounts = JSON.stringify(dList);
+        undoUpdates.discounts = dList;
     }
+
+    fbSaveMultiple(undoUpdates);
     
     logAction("تراجع عن عملية شراء", { type: 'undo', data: lastP, deducted: lastP.paid });
     
