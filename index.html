@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mega Store | Mant</title>
+    <title>Mega Stoant</title>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 576 512'%3E%3Cpath fill='%236366f1' d='M0 24C0 10.7 10.7 0 24 0H69.5c22 0 41.5 12.8 50.6 32h411c26.3 0 45.5 25 38.6 50.4l-41 152.3c-8.5 31.4-37 53.3-69.5 53.3H170.7l5.4 28.5c2.2 11.3 12.1 19.5 23.6 19.5H488c13.3 0 24 10.7 24 24s-10.7 24-24 24H199.7c-34.6 0-64.3-24.6-70.7-58.5L77.4 54.5c-.7-3.8-4-6.5-7.9-6.5H24C10.7 48 0 37.3 0 24zM128 464a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zm336-48a48 48 0 1 1 0 96 48 48 0 1 1 0-96z'/%3E%3C/svg%3E">
 
@@ -667,7 +667,22 @@
         </div>
     </div>
 </div>
+<div id="vipUpgradeModal" class="dialog-modal" style="display:none; z-index: 6000;">
+    <div class="dialog-box" style="text-align:center; max-width:450px">
+        <div style="font-size:60px; margin-bottom:15px" id="vipModalIcon"></div>
+        <h3 style="margin-top:0;" id="vipModalTitle"></h3>
+        <p id="vipModalDesc" style="color:var(--text-muted); font-size:15px; line-height:1.6; margin-bottom:20px"></p>
+        
+        <div style="background:var(--bg-input); border:1px solid var(--border-color); padding:15px; border-radius:12px; margin-bottom:20px; text-align:right; font-size:14px; line-height:1.8;" id="vipModalPerks">
+        </div>
 
+        <p style="font-size:14px; font-weight:bold; color:var(--text-muted);" id="vipModalTarget"></p>
+
+        <div class="dialog-actions">
+            <button class="btn btn-primary" style="width:100%" onclick="document.getElementById('vipUpgradeModal').style.display='none'">رائع، شكراً!</button>
+        </div>
+    </div>
+</div>
 <div class="sidebar" id="mySidebar">
     <div class="brand"><i class="fas fa-rocket"></i> MEGA STORE</div>
     
@@ -683,6 +698,7 @@
         <button onclick="showPage('stock', this)" id="btnStock" class="hidden"><i class="fas fa-cubes"></i> المخزون</button>
         <button onclick="showPage('expiring', this)" id="btnExpiring"><i class="fas fa-hourglass-half"></i> التنبيهات <span id="expiryBadge" class="notif-badge" style="background:var(--danger); color:white; padding:2px 6px; border-radius:10px; font-size:10px; display:none"></span></button>
         <button onclick="showPage('discounts', this)" id="btnDiscounts"><i class="fas fa-ticket-alt"></i> الخصومات <span id="discountBadge" style="background:var(--accent); color:white; padding:2px 6px; border-radius:10px; font-size:10px; display:none; margin-right:4px;"></span></button>
+        <button onclick="showPage('vip', this)" id="btnVip"><i class="fas fa-star" style="color:#fbbf24;"></i> العملاء المميزين</button>
         <button onclick="showPage('wallets', this)" id="btnWallets"><i class="fas fa-wallet"></i> المحافظ</button>
         <button onclick="showPage('history', this)" id="btnHistory"><i class="fas fa-history"></i> السجل المالي</button>
         <button onclick="showPage('analytics', this)" id="btnAnalytics"><i class="fas fa-chart-pie"></i> الإحصائيات</button>
@@ -773,7 +789,23 @@
         </div>
         <div id="discountsPagination" class="pagination"></div>
     </div>
-
+<div id="vip" class="card hidden">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; flex-wrap:wrap; gap:10px">
+            <h3 style="margin-bottom:0"><i class="fas fa-star" style="color:#f59e0b"></i> العملاء المميزين (VIP)</h3>
+        </div>
+        <div class="input-group" style="margin-bottom:20px;">
+            <div style="position:relative;">
+                <input id="vipSearch" onkeyup="refreshVip()" placeholder="بحث برقم الجوال أو اسم العميل..." style="padding-right: 40px;">
+                <i class="fas fa-search" style="position:absolute; right:15px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+            </div>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead><tr><th style="text-align:center;">العميل</th><th style="text-align:center;">رقم الجوال</th><th style="text-align:center;">الرتبة</th><th style="text-align:center;">عمليات الشراء</th><th style="text-align:center;">التراجع بعد</th><th style="text-align:center;">إجراء</th></tr></thead>
+                <tbody id="vipBody"></tbody>
+            </table>
+        </div>
+    </div>
     <div id="security" class="card hidden">
         <h3><i class="fas fa-user-shield" style="color:var(--primary)"></i> إدارة الأمان والمستخدمين</h3>
         <div class="inner-box" style="margin-bottom:30px;">
@@ -1362,13 +1394,132 @@ let currentStockTab = 'active';
 let currentLogsTab = 'financial';
 let currentPage = { logs: 1, expiring: 1, stock: 1, history: 1, discounts: 1 };
 const ITEMS_PER_PAGE = 50;
+const VIP_RANKS = [
+    { id: 'normal',   name: 'زبون عادي',    min: 1,  color: '#94a3b8', chance: 0,  discount: 0,  days: 0,  uses: 1, icon: '🌟' },
+    { id: 'silver',   name: 'زبون فضي',     min: 3,  color: '#cbd5e1', chance: 5,  discount: 2,  days: 3,  uses: 2, icon: '🥈' },
+    { id: 'gold',     name: 'زبون ذهبي',    min: 8,  color: '#fbbf24', chance: 10, discount: 4,  days: 7,  uses: 3, icon: '🥇' },
+    { id: 'platinum', name: 'زبون بلاتيني', min: 18, color: '#c084fc', chance: 15, discount: 6,  days: 14, uses: 4, icon: '🔮' },
+    { id: 'diamond',  name: 'زبون ماسي',    min: 35, color: '#0ea5e9', chance: 20, discount: 10, days: 21, uses: 5, icon: '💎' }
+];
 
+function maskPhone(phone) {
+    if (!phone || phone.length < 6) return phone;
+    return phone.substring(0, 3) + '****' + phone.substring(phone.length - 3);
+}
+
+function processVipDowngrades() {
+    let vips = safeJSON(store.vipCustomers, {});
+    let now = Date.now();
+    let updated = false;
+    for (let phone in vips) {
+        let customer = vips[phone];
+        if (customer.rankIndex > 0) {
+            let daysPassed = Math.floor((now - customer.lastPurchaseTime) / (1000 * 60 * 60 * 24));
+            let drops = Math.floor(daysPassed / 20);
+            if (drops > 0) {
+                for (let i = 0; i < drops && customer.rankIndex > 0; i++) {
+                    let currentRank = VIP_RANKS[customer.rankIndex];
+                    let lowerRank = VIP_RANKS[customer.rankIndex - 1];
+                    let diff = currentRank.min - lowerRank.min;
+                    if (customer.rankIndex === 4) diff = 35 - 18; 
+                    else if (customer.rankIndex === 3) diff = 18 - 8; 
+                    else if (customer.rankIndex === 2) diff = 8 - 3; 
+                    else if (customer.rankIndex === 1) diff = 3 - 1; 
+                    
+                    customer.target = customer.count + diff;
+                    customer.rankIndex--;
+                    customer.lastPurchaseTime += (20 * 86400000); 
+                }
+                updated = true;
+            }
+        }
+    }
+    if (updated) {
+        store.vipCustomers = JSON.stringify(vips);
+        fbSave("vipCustomers", vips);
+    }
+}
+
+function refreshVip() {
+    let vips = safeJSON(store.vipCustomers, {});
+    let search = document.getElementById("vipSearch").value.toLowerCase();
+    let isViewer = currentUser && (currentUser.role === 'viewer' || currentUser.role === 'viewer_plus');
+    let isAdmin = currentUser && currentUser.role === 'admin';
+
+    let list = Object.keys(vips).map(phone => ({ phone: phone, ...vips[phone] }));
+    list = list.filter(c => !search || c.phone.includes(search) || (c.name && c.name.toLowerCase().includes(search)));
+    list.sort((a, b) => {
+        if (b.count !== a.count) return b.count - a.count;
+        return a.phone.localeCompare(b.phone);
+    });
+
+    let tbody = document.getElementById("vipBody");
+    let rows = "";
+    let now = Date.now();
+
+    list.forEach(c => {
+        let rank = VIP_RANKS[c.rankIndex];
+        let displayPhone = isViewer ? maskPhone(c.phone) : c.phone;
+        let countDisplay = c.rankIndex < 4 ? `${c.count} / ${c.target}` : `${c.count} (ماكس)`;
+        
+        let daysPassed = Math.floor((now - c.lastPurchaseTime) / (1000 * 60 * 60 * 24));
+        let daysLeft = Math.max(0, 20 - daysPassed);
+        let timeText = c.rankIndex > 0 ? `${daysLeft} يوم` : '-';
+        
+        let delBtn = isAdmin ? `<button class="btn btn-danger" style="padding:4px 10px; font-size:12px" onclick="deleteVip('${c.phone}')"><i class="fas fa-trash"></i></button>` : '-';
+
+        rows += `<tr>
+            <td style="text-align:center; font-weight:bold">${esc(c.name)}</td>
+            <td style="text-align:center;" dir="ltr">${displayPhone}</td>
+            <td style="text-align:center; font-weight:bold; color:${rank.color}">${rank.name}</td>
+            <td style="text-align:center; font-weight:bold;" class="eng-num">${countDisplay}</td>
+            <td style="text-align:center;">${timeText}</td>
+            <td style="text-align:center;">${delBtn}</td>
+        </tr>`;
+    });
+    tbody.innerHTML = rows || `<tr><td colspan='6' style='text-align:center; padding:20px; color:var(--text-muted)'>لا يوجد عملاء بعد</td></tr>`;
+}
+
+async function deleteVip(phone) {
+    let ok = await showConfirm("حذف الرتبة", "هل أنت متأكد من حذف هذا العميل من نظام الرتب وتصفير عداده؟", "حذف", "إلغاء", '<i class="fas fa-user-times"></i>');
+    if (!ok) return;
+    let vips = safeJSON(store.vipCustomers, {});
+    delete vips[phone];
+    store.vipCustomers = JSON.stringify(vips);
+    fbSave("vipCustomers", vips);
+    logAction(`قام الأدمن بحذف رتبة العميل صاحب الرقم ${phone}`, 'danger');
+    refreshVip();
+    notify("تم حذف العميل بنجاح");
+}
+
+function showVipUpgradeModal(customerObj, rankObj) {
+    document.getElementById("vipModalIcon").style.color = rankObj.color;
+    document.getElementById("vipModalIcon").innerHTML = `<i class="fas fa-medal"></i>`;
+    document.getElementById("vipModalTitle").innerHTML = `مرحباً ${esc(customerObj.name)}!`;
+    document.getElementById("vipModalDesc").innerHTML = `ارتفعت رتبتك وصرت بالنسبة إلنا <strong style="color:${rankObj.color}">${rankObj.name}</strong><br>بسبب شرائك من متجرنا ${customerObj.count} مرات!`;
+    
+    document.getElementById("vipModalPerks").innerHTML = `
+        <div style="margin-bottom:8px; color:var(--primary); font-weight:bold;">مميزات الرتبة أنك في كل عملية شراء هتاخد:</div>
+        <div>1- نسبة حصولك على كود خصم صارت أعلى بنسبة <span class="eng-num" style="font-weight:bold; color:var(--success)">+${rankObj.chance}%</span>.</div>
+        <div>2- نسبة الخصم صارت أعلى بنسبة <span class="eng-num" style="font-weight:bold; color:var(--success)">+${rankObj.discount}%</span>.</div>
+        <div>3- مدة صلاحية الكود صارت أطول بـ <span class="eng-num" style="font-weight:bold; color:var(--success)">${rankObj.days}</span> أيام.</div>
+        <div>4- بتقدر تستعمل كود الخصم <span class="eng-num" style="font-weight:bold; color:var(--success)">${rankObj.uses}</span> مرات.</div>
+    `;
+
+    if (customerObj.rankIndex < 4) {
+        document.getElementById("vipModalTarget").innerHTML = `متبقي على وصولك للرتبة الأعلى: <span class="eng-num" style="color:var(--danger)">${customerObj.target - customerObj.count}</span> عملية شراء.`;
+    } else {
+        document.getElementById("vipModalTarget").innerHTML = `مبروك! وصلت لأعلى رتبة في متجرنا.`;
+    }
+
+    document.getElementById("vipUpgradeModal").style.display = "flex";
+}
 // ─── تصنيف مفاتيح البيانات ──────────────────────────────────────
 // SCALAR: يُخزَّن كحقل في المستند الرئيسي (wallets وinvest وsettings)
 // ARRAY:  يُخزَّن كـ Subcollection — كل عنصر وثيقة Firestore مستقلة
 // services: مصفوفة strings بسيطة ← تُخزَّن كحقل في المستند الرئيسي (Scalar)
 // لا تحتوي على IDs فلا تصلح كـ Subcollection
-const SCALAR_KEYS = ["wallets", "settings", "invest", "services"];
+const SCALAR_KEYS = ["wallets", "settings", "invest", "services", "vipCustomers"];
 const ARRAY_KEYS  = ["purchases", "stock", "users", "activityLog",
                      "todoList", "generalNotes", "discounts"];
 const STORE_KEYS  = [...SCALAR_KEYS, ...ARRAY_KEYS];
@@ -2035,15 +2186,14 @@ function _initNewDatabase() {
 }
 
 function getDefaultData() {
-    // في V2 تُخزَّن المصفوفات كـ Subcollections، وهذه الدالة تُعيد الحقول القياسية فقط
     return {
         wallets:  safeJSON(store.wallets,  {"جوال باي — سعاد":{bal:0,cur:"₪",active:true},"جوال باي — محمد":{bal:0,cur:"₪",active:true},"بال باي — أحمد":{bal:0,cur:"₪",active:true},"بايننس — احمد":{bal:0,cur:"$",active:true}}),
         invest:   safeJSON(store.invest,   {ahmad:{d:0,s:0},mohamed:{d:0,s:0},store:{d:0,s:0}}),
         settings: safeJSON(store.settings, {ahmad:35,mohamed:35,store:30,deductCost:true,exchangeRate:0,logsVis:"all",discountEnabled:true,discountChance:25,discountMin:10,discountMax:20,validityMin:15,validityMax:45}),
-        services: safeJSON(store.services, [])
+        services: safeJSON(store.services, []),
+        vipCustomers: safeJSON(store.vipCustomers, {})
     };
 }
-
 function showModalDetails(details) {
     if(!details) return;
     const body = document.getElementById("modalBody");
@@ -2282,6 +2432,7 @@ function init(){
     if(!store.stock) store.stock = "[]"; 
     if(!store.services) store.services = "[]";
     if(!store.discounts) store.discounts = "[]"; 
+    if(!store.vipCustomers) store.vipCustomers = "{}";
 
     let isDark = localStorage.getItem("darkMode") === "true";
     if(document.getElementById("darkModeToggle")) document.getElementById("darkModeToggle").checked = isDark;
@@ -2876,6 +3027,7 @@ function showPage(id, btn){
     if(id === 'wallets') refreshWallets();
     if(id === 'expiring') refreshExpiring();
     if(id === 'discounts') refreshDiscounts();
+    if(id === 'vip') refreshVip();
     if(id === 'analytics') refreshAnalytics();
     if(id === 'security') renderUsersTable();
     if(id === 'logs') refreshLogs();
@@ -3138,7 +3290,6 @@ function _executePurchase(paid, paidCur, duration, settings, stItem, cleanName, 
     if(!wallets[walletVal]) { notify("المحفظة المحددة غير موجودة", "error"); return; }
     
     let tBefore = wallets[walletVal].bal;
-    
     wallets[walletVal].bal += paid;
     
     let distributableProfit = paid;
@@ -3182,26 +3333,57 @@ function _executePurchase(paid, paidCur, duration, settings, stItem, cleanName, 
     stItem.soldProfiles = (stItem.soldProfiles || 0) + 1;
     if(stItem.soldProfiles >= (stItem.totalProfiles || 1)) {
         stItem.status = 'sold';
-        let nd = new Date();
-        let mm = (nd.getMonth()+1).toString().padStart(2,'0');
-        let dd = nd.getDate().toString().padStart(2,'0');
-        stItem.soldDate = `${nd.getFullYear()}-${mm}-${dd}`;
+        let ndd = new Date();
+        let mm = (ndd.getMonth()+1).toString().padStart(2,'0');
+        let dd = ndd.getDate().toString().padStart(2,'0');
+        stItem.soldDate = `${ndd.getFullYear()}-${mm}-${dd}`;
     }
     let stockList = safeJSON(store.stock, []);
     let stIdx = stockList.findIndex(x => x.id === stItem.id);
     if(stIdx !== -1) stockList[stIdx] = stItem;
     let nd = new Date();
     let nmm = (nd.getMonth()+1).toString().padStart(2,'0');
-    let ndd = nd.getDate().toString().padStart(2,'0');
+    let nddStr = nd.getDate().toString().padStart(2,'0');
 
     purchases.forEach(p => p.canBeUndone = false);
 
-    // بدل حفظ snapshot كامل، نحفظ فقط الفروقات اللازمة للتراجع
-    const _undoDelta = { shareType };
+    // -- معالجة الـ VIP --
+    let vips = safeJSON(store.vipCustomers, {});
+    let vipPrevState = null;
+    let vipRankChanged = false;
+    let vipNewRank = null;
+    let vipCustomerObj = null;
+
+    if (customerPhoneVal && !isComp) {
+        vipCustomerObj = vips[customerPhoneVal] || { name: customerVal, count: 0, rankIndex: 0, target: 1, lastPurchaseTime: nd.getTime() };
+        vipPrevState = JSON.parse(JSON.stringify(vipCustomerObj)); 
+        
+        vipCustomerObj.count++;
+        vipCustomerObj.name = customerVal;
+        vipCustomerObj.lastPurchaseTime = nd.getTime();
+        
+        let oldRank = vipCustomerObj.rankIndex;
+        
+        if (vipCustomerObj.rankIndex < 4 && vipCustomerObj.count >= vipCustomerObj.target) {
+            vipCustomerObj.rankIndex++;
+            if (vipCustomerObj.rankIndex < 4) {
+                let nextRankDiff = VIP_RANKS[vipCustomerObj.rankIndex + 1].min - VIP_RANKS[vipCustomerObj.rankIndex].min;
+                vipCustomerObj.target = vipCustomerObj.count + nextRankDiff;
+            } else {
+                vipCustomerObj.target = null; 
+            }
+        }
+        
+        vips[customerPhoneVal] = vipCustomerObj;
+        store.vipCustomers = JSON.stringify(vips); 
+        
+        vipRankChanged = (vipCustomerObj.rankIndex > oldRank);
+        vipNewRank = VIP_RANKS[vipCustomerObj.rankIndex];
+    }
+
+    const _undoDelta = { shareType, vipPhone: customerPhoneVal, vipPrevState: vipPrevState };
     if (!isComp) {
-        const _storeTotal = recoupAmount + (distributableProfit >= 0
-            ? +(distributableProfit * (settings.store / 100)).toFixed(2)
-            : distributableProfit);
+        const _storeTotal = recoupAmount + (distributableProfit >= 0 ? +(distributableProfit * (settings.store / 100)).toFixed(2) : distributableProfit);
         _undoDelta.store   = _storeTotal;
         _undoDelta.ahmad   = distributableProfit >= 0 ? +(distributableProfit * (settings.ahmad   / 100)).toFixed(2) : 0;
         _undoDelta.mohamed = distributableProfit >= 0 ? +(distributableProfit * (settings.mohamed / 100)).toFixed(2) : 0;
@@ -3214,7 +3396,7 @@ function _executePurchase(paid, paidCur, duration, settings, stItem, cleanName, 
 
     purchases.push({
         id: 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2,5),
-        date: `${nd.getFullYear()}-${nmm}-${ndd}`,
+        date: `${nd.getFullYear()}-${nmm}-${nddStr}`,
         customer: customerVal||"عميل",
         phone: customerPhoneVal||"-",
         sub: cleanName,
@@ -3230,49 +3412,31 @@ function _executePurchase(paid, paidCur, duration, settings, stItem, cleanName, 
         canBeUndone: true
     });
 
-    // ─── حفظ ذري (Atomic) لمنع Race Condition ───────────────────
-    // wallets + invest ← FieldValue.increment() على الخادم مباشرة
-    // stock + purchases ← Subcollections عادية
     store.stock     = JSON.stringify(stockList);
     store.wallets   = JSON.stringify(wallets);
     store.invest    = JSON.stringify(invest);
     store.purchases = JSON.stringify(purchases);
 
-    // بناء قاموس increment لـ wallets
     const _wIncs = { [walletVal]: paid };
-
-    // بناء قاموس increment لـ invest
     const _iIncs = {};
     if (!isComp) {
-        // المتجر يسترد التكلفة + حصته من الربح الصافي
-        const _storeTotal = recoupAmount + (distributableProfit >= 0
-            ? +(distributableProfit * (settings.store / 100)).toFixed(2)
-            : distributableProfit);
+        const _storeTotal = recoupAmount + (distributableProfit >= 0 ? +(distributableProfit * (settings.store / 100)).toFixed(2) : distributableProfit);
         _iIncs[`store.${shareType}`]   = _storeTotal;
         if (distributableProfit >= 0) {
             _iIncs[`ahmad.${shareType}`]   = +(distributableProfit * (settings.ahmad / 100)).toFixed(2);
             _iIncs[`mohamed.${shareType}`] = +(distributableProfit * (settings.mohamed / 100)).toFixed(2);
         }
     } else if (settings.deductCost) {
-        // تعويض: خصم تكلفة البروفايل من حصة المتجر
         let _oC  = (parseFloat(stItem.cost) || 0) / (parseInt(stItem.totalProfiles) || 1);
         let _sT  = stItem.costCurrency === '$' ? 'd' : 's';
         _iIncs[`store.${_sT}`] = -_oC;
     }
 
     fbAtomicWalletInvest(_wIncs, _iIncs, wallets, invest);
-    fbSaveMultiple({ stock: stockList, purchases: purchases });
+    fbSaveMultiple({ stock: stockList, purchases: purchases, vipCustomers: vips });
     
     logAction(`إضافة عملية شراء: ${cleanName} للعميل ${customerVal}`, 'financial', {
-        type: 'purchase',
-        customer: customerVal||"عميل",
-        sub: cleanName,
-        paid: paid+paidCur,
-        costVal: isComp ? "0" : fix(calculatedCost) + paidCur,
-        isFirstProfile: !isComp,
-        toName: walletVal, tBefore: tBefore, tAfter: wallets[walletVal].bal,
-        appliedDiscountPct: appliedDiscountPct,
-        isComp: isComp
+        type: 'purchase', customer: customerVal||"عميل", sub: cleanName, paid: paid+paidCur, costVal: isComp ? "0" : fix(calculatedCost) + paidCur, isFirstProfile: !isComp, toName: walletVal, tBefore: tBefore, tAfter: wallets[walletVal].bal, appliedDiscountPct: appliedDiscountPct, isComp: isComp
     });
 
     if (usedDiscountObj) {
@@ -3286,78 +3450,86 @@ function _executePurchase(paid, paidCur, duration, settings, stItem, cleanName, 
     }
 
     let dEnabled = settings.discountEnabled !== false;
-    let dChance = settings.discountChance !== undefined ? settings.discountChance : 25;
+    let baseChance = settings.discountChance !== undefined ? settings.discountChance : 25;
+    let vipChancePerk = vipNewRank ? vipNewRank.chance : 0;
+    let finalChance = baseChance + vipChancePerk;
     
+    let generatedCoupon = null;
+
     if (dEnabled && !isComp && paid > 0 && appliedDiscountPct === 0) {
         let rand = Math.random() * 100;
-        if (rand <= dChance) {
+        if (rand <= finalChance) {
             let dMin = settings.discountMin !== undefined ? settings.discountMin : 10;
             let dMax = settings.discountMax !== undefined ? settings.discountMax : 20;
             let vMin = settings.validityMin !== undefined ? settings.validityMin : 15;
             let vMax = settings.validityMax !== undefined ? settings.validityMax : 45;
+
+            let pct = Math.floor(Math.random() * (dMax - dMin + 1)) + dMin + (vipNewRank ? vipNewRank.discount : 0);
+            let days = Math.floor(Math.random() * (vMax - vMin + 1)) + vMin + (vipNewRank ? vipNewRank.days : 0);
+            let uses = vipNewRank ? vipNewRank.uses : 1;
 
             let dList = safeJSON(store.discounts, []);
             let code;
             do { code = Math.floor(100000000 + Math.random() * 900000000).toString(); } 
             while (dList.some(x => x.code === code));
             
-            let pct = Math.floor(Math.random() * (dMax - dMin + 1)) + dMin;
-            let days = Math.floor(Math.random() * (vMax - vMin + 1)) + vMin;
             let expTime = new Date().getTime() + (days * 86400000);
 
-            let generatedCoupon = {
-                id: 'id_' + Date.now().toString(),
-                code: code,
-                customer: customerVal || "عميل",
-                service: cleanName,
-                percentage: pct,
-                expiry: expTime,
-                days: days,
-                maxUses: 1,
-                usedCount: 0,
-                notified: false
+            generatedCoupon = {
+                id: 'id_' + Date.now().toString(), code: code, customer: customerVal || "عميل", service: cleanName, percentage: pct, expiry: expTime, days: days, maxUses: uses, usedCount: 0, notified: false
             };
 
             dList.unshift(generatedCoupon);
             store.discounts = JSON.stringify(dList);
             fbSave("discounts", dList);
-
-            showCouponModal(generatedCoupon, customerPhoneVal);
         }
+    }
+    
+    // تسلسل النوافذ المنبثقة للـ VIP والكود
+    if (generatedCoupon && vipRankChanged && vipCustomerObj.rankIndex > 0) {
+        showCouponModal(generatedCoupon, customerPhoneVal, () => {
+            setTimeout(() => { showVipUpgradeModal(vipCustomerObj, vipNewRank); }, 5000);
+        });
+    } else if (generatedCoupon) {
+        showCouponModal(generatedCoupon, customerPhoneVal, null);
+    } else if (vipRankChanged && vipCustomerObj.rankIndex > 0) {
+        showVipUpgradeModal(vipCustomerObj, vipNewRank);
     }
     
     currentPage.history = 1;
     loadPurchaseStock();
     refreshAll();  notify("تمت العملية بنجاح");
     
-    document.getElementById("paidAmount").value=""; 
-    document.getElementById("customer").value=""; 
-    document.getElementById("sub").value=""; 
-    document.getElementById("customerPhone").value=""; 
-    document.getElementById("discountCodeInput").value="";
-    document.getElementById("isCompensation").checked = false;
-    document.getElementById("customerPhone").style.borderColor = "";
+    document.getElementById("paidAmount").value=""; document.getElementById("customer").value=""; document.getElementById("sub").value=""; document.getElementById("customerPhone").value=""; document.getElementById("discountCodeInput").value=""; document.getElementById("isCompensation").checked = false; document.getElementById("customerPhone").style.borderColor = "";
 }
 
-function showCouponModal(coupon, phone) {
+function showCouponModal(coupon, phone, onCloseCallback = null) {
     document.getElementById("couponModalMsg").textContent = `تم توليد كود خصم للعميل ${coupon.customer} بنجاح.`;
     document.getElementById("couponModalCode").textContent = coupon.code;
     document.getElementById("couponModalPct").textContent = `خصم بقيمة ${coupon.percentage}%`;
-    document.getElementById("couponModalDays").textContent = `صالح لمدة ${coupon.days} يوم`;
+    document.getElementById("couponModalDays").textContent = `صالح لمدة ${coupon.days} يوم (مسموح بـ ${coupon.maxUses} استعمالات)`;
     document.getElementById("couponModalQuestion").textContent = `حصل العميل "${coupon.customer}" على كود خصم، هل تود إخباره؟`;
 
     let msg = `مرحباً ${coupon.customer}\nحصلت على كود خصم ${coupon.percentage}% على أي خدمة بتختارها من خدماتنا\nصلاحية كود الخصم: ${coupon.days} يوم\nكود الخصم: ${coupon.code}`;
     let cleanPhone = (phone || '').replace(/\D/g, '');
-    
     let waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
     let waBtn = document.getElementById("couponWhatsAppBtn");
+    
+    const handleClose = () => {
+        document.getElementById('couponModal').style.display='none';
+        if (onCloseCallback) onCloseCallback();
+    };
+
     waBtn.href = waLink;
     if (!cleanPhone) {
         waBtn.style.display = "none";
     } else {
         waBtn.style.display = "flex";
-        waBtn.onclick = () => { document.getElementById('couponModal').style.display='none'; };
+        waBtn.onclick = handleClose;
     }
+
+    let closeBtn = document.querySelector("#couponModal .btn-danger");
+    closeBtn.onclick = handleClose;
 
     document.getElementById("couponModal").style.display = "flex";
 }
@@ -3451,17 +3623,18 @@ function refreshAll(){
     
     
     const visMap = {
-        'history': refreshHistory,
-        'investment': refreshInvestment,
-        'generalNotes': refreshGeneralNotes,
-        'expiring': refreshExpiring,
-        'analytics': refreshAnalytics,
-        'logs': refreshLogs,
-        'stock': refreshStock,
-        'discounts': refreshDiscounts,
-        'modify': () => { refreshTodoList(); renderServicesSettings(); updateStorageUI(); loadProfitSettings(); }
-    };
-    
+            'history': refreshHistory,
+            'investment': refreshInvestment,
+            'generalNotes': refreshGeneralNotes,
+            'expiring': refreshExpiring,
+            'analytics': refreshAnalytics,
+            'logs': refreshLogs,
+            'stock': refreshStock,
+            'discounts': refreshDiscounts,
+            'vip': refreshVip,
+            'modify': () => { refreshTodoList(); renderServicesSettings(); updateStorageUI(); loadProfitSettings(); }
+        };
+    processVipDowngrades();
     updateDiscountBadge();
     updateMonthSalesStat();
     
@@ -3646,7 +3819,7 @@ function refreshHistory(){
     
     let rows = "";
     paginated.forEach(item => {
-        let phoneD = isRestricted ? '----' : esc(item.phone);
+        let phoneD = isRestricted ? '----' : maskPhone(item.phone);
         let subD = isRestricted ? '----' : `<span class="badge badge-info">${esc(item.sub)}</span>`;
         let paidD = isRestricted ? '----' : esc(item.paid);
         let costD = isRestricted ? '----' : esc(item.cost);
@@ -4321,19 +4494,17 @@ async function undoLastPurchase(){
     let purchases = safeJSON(store.purchases, []);
     if(purchases.length === 0) return notify("لا توجد عمليات للتراجع عنها", "error");
     
-    // البحث عن العملية القابلة للتراجع (الأحدث دائماً هي التي canBeUndone = true)
     let undoIdx = purchases.findIndex(x => x.canBeUndone);
     if (undoIdx === -1) {
         return notify("لا يمكن التراجع سوى لمرة واحدة عن أحدث عملية بيع فقط", "error");
     }
     let lastP = purchases[undoIdx];
     
-    let ok = await showConfirm("تراجع عن آخر عملية", "سيتم استعادة جميع الأرصدة والحصص وكود الخصم (إن وُجد). هل تريد المتابعة؟", "نعم، تراجع", "لا، إلغاء", '<i class="fas fa-undo"></i>');
+    let ok = await showConfirm("تراجع عن آخر عملية", "سيتم استعادة جميع الأرصدة والحصص وكود الخصم وترقية الـ VIP (إن وُجد). هل تريد المتابعة؟", "نعم، تراجع", "لا، إلغاء", '<i class="fas fa-undo"></i>');
     if(!ok) return;
     
-    purchases.splice(undoIdx, 1); // Remove the undoable purchase
+    purchases.splice(undoIdx, 1); 
     
-    // ─── Atomic: استرداد مبلغ المحفظة ──────────────────────────────
     let wallets = safeJSON(store.wallets, {});
     const _undoWalletIncs = {};
     if(lastP.wallet && wallets[lastP.wallet]) { 
@@ -4342,7 +4513,6 @@ async function undoLastPurchase(){
         _undoWalletIncs[lastP.wallet] = -paidVal;
     }
     
-    // جمع كل التغييرات في طلب واحد
     let undoUpdates = { purchases: purchases };
     store.wallets   = JSON.stringify(wallets);
     store.purchases = JSON.stringify(purchases);
@@ -4373,15 +4543,27 @@ async function undoLastPurchase(){
         undoUpdates.discounts = dList;
     }
 
+    // -- التراجع عن الـ VIP --
+    let vips = safeJSON(store.vipCustomers, {});
+    if (lastP.investDelta && lastP.investDelta.vipPhone) {
+        let phone = lastP.investDelta.vipPhone;
+        let pState = lastP.investDelta.vipPrevState;
+        
+        if (!pState || pState.count === 0) {
+            delete vips[phone]; 
+        } else {
+            vips[phone] = pState; 
+        }
+        store.vipCustomers = JSON.stringify(vips);
+        undoUpdates.vipCustomers = vips;
+    }
+
     fbSaveMultiple(undoUpdates);
 
-    // ─── Atomic: استرداد حصص الأرباح ───────────────────────────────
     if (lastP.investDelta) {
-        // الطريقة الجديدة: عكس الفروقات بشكل ذري
         const d = lastP.investDelta;
         const _iUndo = {};
         if (d.overrideType) {
-            // حالة تعويض — نعكس الخصم من المتجر
             _iUndo[`store.${d.storeType}`] = -(d.store);
         } else {
             const t = d.shareType || 's';
@@ -4389,7 +4571,6 @@ async function undoLastPurchase(){
             if (d.ahmad   !== undefined) _iUndo[`ahmad.${t}`]   = -d.ahmad;
             if (d.mohamed !== undefined) _iUndo[`mohamed.${t}`] = -d.mohamed;
         }
-        // تحديث الذاكرة المحلية
         let invest = safeJSON(store.invest, {});
         Object.entries(_iUndo).forEach(([path, delta]) => {
             let [person, cur] = path.split('.');
@@ -4397,21 +4578,11 @@ async function undoLastPurchase(){
         });
         store.invest = JSON.stringify(invest);
         fbAtomicWalletInvest(_undoWalletIncs, _iUndo, wallets, invest);
-    } else if (lastP.investSnapshot) {
-        // توافق مع العمليات القديمة التي تحمل snapshot كامل
-        store.invest = JSON.stringify(lastP.investSnapshot);
-        lastServerState['invest'] = JSON.parse(JSON.stringify(lastP.investSnapshot));
-        fbAtomicWalletInvest(_undoWalletIncs, {}, wallets, lastP.investSnapshot);
-        if (isDemoMode) {
-            localStorage.setItem('demo_invest', JSON.stringify(lastP.investSnapshot));
-        } else if (fbDocRef) {
-            fbDocRef.update({ invest: lastP.investSnapshot }).catch(e => console.error("undo invest:", e));
-        }
     } else {
         fbAtomicWalletInvest(_undoWalletIncs, {}, wallets, wallets);
     }
     
-    logAction("تراجع عن عملية شراء", 'financial', { type: 'undo', data: lastP, deducted: lastP.paid });
+    logAction("تراجع عن عملية شراء (واسترداد رتبة الـ VIP إن لزم)", 'financial', { type: 'undo', data: lastP, deducted: lastP.paid });
     
     currentPage.history = 1;
     loadPurchaseStock();
@@ -5120,6 +5291,7 @@ window.onload = init;
 </script>
 </body>
 </html>
+
 
 
 
