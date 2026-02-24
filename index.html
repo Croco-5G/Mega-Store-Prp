@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mega Stoant</title>
+    <title>Mega Store | System</title>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 576 512'%3E%3Cpath fill='%236366f1' d='M0 24C0 10.7 10.7 0 24 0H69.5c22 0 41.5 12.8 50.6 32h411c26.3 0 45.5 25 38.6 50.4l-41 152.3c-8.5 31.4-37 53.3-69.5 53.3H170.7l5.4 28.5c2.2 11.3 12.1 19.5 23.6 19.5H488c13.3 0 24 10.7 24 24s-10.7 24-24 24H199.7c-34.6 0-64.3-24.6-70.7-58.5L77.4 54.5c-.7-3.8-4-6.5-7.9-6.5H24C10.7 48 0 37.3 0 24zM128 464a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zm336-48a48 48 0 1 1 0 96 48 48 0 1 1 0-96z'/%3E%3C/svg%3E">
 
@@ -678,8 +678,48 @@
 
         <p style="font-size:14px; font-weight:bold; color:var(--text-muted);" id="vipModalTarget"></p>
 
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <a id="vipWhatsAppBtn" target="_blank" class="btn btn-success" style="background:#25D366; color:white; width:100%"><i class="fab fa-whatsapp"></i> إخبار العميل عبر واتساب</a>
+            <button class="btn btn-danger" style="background:transparent; border:1px solid var(--danger); color:var(--danger); width:100%" onclick="document.getElementById('vipUpgradeModal').style.display='none'">إغلاق</button>
+        </div>
+    </div>
+</div>
+
+<div id="vipInfoModal" class="dialog-modal" style="display:none; z-index: 6000;">
+    <div class="dialog-box" style="text-align:right; max-width:450px">
+        <h3 style="margin-top:0; border-bottom:1px solid var(--border-color); padding-bottom:15px;">
+            <i class="fas fa-exclamation-circle" style="color:#a855f7"></i> دليل رتب العملاء (VIP)
+        </h3>
+        <div class="input-group">
+            <label>اختر الرتبة لعرض تفاصيلها</label>
+            <select id="vipInfoSelect" onchange="updateVipInfoDetails()"></select>
+        </div>
+        <div id="vipInfoDetails" style="background:var(--bg-input); border:1px solid var(--border-color); padding:15px; border-radius:12px; margin-bottom:20px; font-size:14px; line-height:1.8;">
+        </div>
         <div class="dialog-actions">
-            <button class="btn btn-primary" style="width:100%" onclick="document.getElementById('vipUpgradeModal').style.display='none'">رائع، شكراً!</button>
+            <button class="btn btn-primary" style="width:100%" onclick="document.getElementById('vipInfoModal').style.display='none'">إغلاق</button>
+        </div>
+    </div>
+</div>
+
+<div id="addVipModal" class="dialog-modal" style="display:none; z-index: 6000;">
+    <div class="dialog-box" style="text-align:right; max-width:400px">
+        <h3 style="margin-top:0; border-bottom:1px solid var(--border-color); padding-bottom:15px;"><i class="fas fa-star" style="color:var(--primary)"></i> إضافة رتبة عميل يدوياً</h3>
+        <div class="input-group">
+            <label>اسم العميل</label>
+            <input id="addVipName" placeholder="مثال: أحمد">
+        </div>
+        <div class="input-group">
+            <label>رقم الجوال</label>
+            <input id="addVipPhone" placeholder="+97xxxxxxxxxx" dir="ltr" style="text-align:right;">
+        </div>
+        <div class="input-group">
+            <label>عدد عمليات الشراء السابقة</label>
+            <input type="number" id="addVipCount" placeholder="مثال: 5">
+        </div>
+        <div class="dialog-actions">
+            <button class="btn btn-success" onclick="saveManualVip()">حفظ وإضافة</button>
+            <button class="btn" style="background:transparent; border:1px solid var(--border-color); color:var(--text-muted)" onclick="document.getElementById('addVipModal').style.display='none'">إلغاء</button>
         </div>
     </div>
 </div>
@@ -698,7 +738,7 @@
         <button onclick="showPage('stock', this)" id="btnStock" class="hidden"><i class="fas fa-cubes"></i> المخزون</button>
         <button onclick="showPage('expiring', this)" id="btnExpiring"><i class="fas fa-hourglass-half"></i> التنبيهات <span id="expiryBadge" class="notif-badge" style="background:var(--danger); color:white; padding:2px 6px; border-radius:10px; font-size:10px; display:none"></span></button>
         <button onclick="showPage('discounts', this)" id="btnDiscounts"><i class="fas fa-ticket-alt"></i> الخصومات <span id="discountBadge" style="background:var(--accent); color:white; padding:2px 6px; border-radius:10px; font-size:10px; display:none; margin-right:4px;"></span></button>
-        <button onclick="showPage('vip', this)" id="btnVip"><i class="fas fa-star" style="color:#fbbf24;"></i> العملاء المميزين</button>
+        <button onclick="showPage('vip', this)" id="btnVip"><i class="fas fa-star"></i> العملاء المميزين</button>
         <button onclick="showPage('wallets', this)" id="btnWallets"><i class="fas fa-wallet"></i> المحافظ</button>
         <button onclick="showPage('history', this)" id="btnHistory"><i class="fas fa-history"></i> السجل المالي</button>
         <button onclick="showPage('analytics', this)" id="btnAnalytics"><i class="fas fa-chart-pie"></i> الإحصائيات</button>
@@ -791,7 +831,12 @@
     </div>
 <div id="vip" class="card hidden">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; flex-wrap:wrap; gap:10px">
-            <h3 style="margin-bottom:0"><i class="fas fa-star" style="color:#f59e0b"></i> العملاء المميزين (VIP)</h3>
+            <h3 style="margin-bottom:0"><i class="fas fa-star" style="color:var(--primary)"></i> العملاء المميزين (VIP)</h3>
+            <div style="display:flex; gap:10px;">
+                <button class="btn" style="background:#a855f7; color:white" onclick="openVipInfoModal()"><i class="fas fa-exclamation-circle"></i> تفاصيل الرتب</button>
+                <button id="btnAddVip" class="btn btn-success hidden" onclick="openAddVipModal()"><i class="fas fa-plus"></i> إضافة رتبة</button>
+                <button id="btnDeleteAllVip" class="btn btn-danger hidden" onclick="deleteAllVips()"><i class="fas fa-trash-alt"></i> مسح الكل</button>
+            </div>
         </div>
         <div class="input-group" style="margin-bottom:20px;">
             <div style="position:relative;">
@@ -1395,11 +1440,11 @@ let currentLogsTab = 'financial';
 let currentPage = { logs: 1, expiring: 1, stock: 1, history: 1, discounts: 1 };
 const ITEMS_PER_PAGE = 50;
 const VIP_RANKS = [
-    { id: 'normal',   name: 'زبون عادي',    min: 1,  color: '#94a3b8', chance: 0,  discount: 0,  days: 0,  uses: 1, icon: '🌟' },
-    { id: 'silver',   name: 'زبون فضي',     min: 3,  color: '#cbd5e1', chance: 5,  discount: 2,  days: 3,  uses: 2, icon: '🥈' },
-    { id: 'gold',     name: 'زبون ذهبي',    min: 8,  color: '#fbbf24', chance: 10, discount: 4,  days: 7,  uses: 3, icon: '🥇' },
-    { id: 'platinum', name: 'زبون بلاتيني', min: 18, color: '#c084fc', chance: 15, discount: 6,  days: 14, uses: 4, icon: '🔮' },
-    { id: 'diamond',  name: 'زبون ماسي',    min: 35, color: '#0ea5e9', chance: 20, discount: 10, days: 21, uses: 5, icon: '💎' }
+    { id: 'normal',   name: 'زبون عادي',    min: 1,  color: '#94a3b8', chance: 0,  discount: 0,  days: 0,  uses: 1, icon: '<i class="fas fa-user"></i>' },
+    { id: 'silver',   name: 'زبون فضي',     min: 3,  color: '#cbd5e1', chance: 5,  discount: 2,  days: 3,  uses: 2, icon: '<i class="fas fa-medal"></i>' },
+    { id: 'gold',     name: 'زبون ذهبي',    min: 8,  color: '#fbbf24', chance: 10, discount: 4,  days: 7,  uses: 3, icon: '<i class="fas fa-crown"></i>' },
+    { id: 'platinum', name: 'زبون بلاتيني', min: 18, color: '#c084fc', chance: 15, discount: 6,  days: 14, uses: 4, icon: '<i class="fas fa-trophy"></i>' },
+    { id: 'diamond',  name: 'زبون ماسي',    min: 35, color: '#0ea5e9', chance: 20, discount: 10, days: 21, uses: 5, icon: '<i class="fas fa-gem"></i>' }
 ];
 
 function maskPhone(phone) {
@@ -1492,27 +1537,141 @@ async function deleteVip(phone) {
     notify("تم حذف العميل بنجاح");
 }
 
-function showVipUpgradeModal(customerObj, rankObj) {
+function showVipUpgradeModal(customerObj, rankObj, phone) {
     document.getElementById("vipModalIcon").style.color = rankObj.color;
     document.getElementById("vipModalIcon").innerHTML = `<i class="fas fa-medal"></i>`;
-    document.getElementById("vipModalTitle").innerHTML = `مرحباً ${esc(customerObj.name)}!`;
-    document.getElementById("vipModalDesc").innerHTML = `ارتفعت رتبتك وصرت بالنسبة إلنا <strong style="color:${rankObj.color}">${rankObj.name}</strong><br>بسبب شرائك من متجرنا ${customerObj.count} مرات!`;
+    document.getElementById("vipModalTitle").innerHTML = `ترقية عميل!`;
+    document.getElementById("vipModalDesc").innerHTML = `العميل <strong style="color:var(--primary)">${esc(customerObj.name)}</strong> وصل لعدد ${customerObj.count} عمليات شراء، وترقى إلى رتبة <strong style="color:${rankObj.color}">${rankObj.name}</strong>.`;
     
     document.getElementById("vipModalPerks").innerHTML = `
-        <div style="margin-bottom:8px; color:var(--primary); font-weight:bold;">مميزات الرتبة أنك في كل عملية شراء هتاخد:</div>
-        <div>1- نسبة حصولك على كود خصم صارت أعلى بنسبة <span class="eng-num" style="font-weight:bold; color:var(--success)">+${rankObj.chance}%</span>.</div>
-        <div>2- نسبة الخصم صارت أعلى بنسبة <span class="eng-num" style="font-weight:bold; color:var(--success)">+${rankObj.discount}%</span>.</div>
-        <div>3- مدة صلاحية الكود صارت أطول بـ <span class="eng-num" style="font-weight:bold; color:var(--success)">${rankObj.days}</span> أيام.</div>
-        <div>4- بتقدر تستعمل كود الخصم <span class="eng-num" style="font-weight:bold; color:var(--success)">${rankObj.uses}</span> مرات.</div>
+        <div style="margin-bottom:8px; color:var(--primary); font-weight:bold;">المميزات التي سيحصل عليها مستقبلاً:</div>
+        <div>1- فرصة حصوله على كود: <span class="eng-num" style="font-weight:bold; color:var(--success)">+${rankObj.chance}%</span></div>
+        <div>2- نسبة الخصم الإضافية: <span class="eng-num" style="font-weight:bold; color:var(--success)">+${rankObj.discount}%</span></div>
+        <div>3- أيام إضافية لصلاحية الكود: <span class="eng-num" style="font-weight:bold; color:var(--success)">${rankObj.days} أيام</span></div>
+        <div>4- مرات الاستخدام المسموحة: <span class="eng-num" style="font-weight:bold; color:var(--success)">${rankObj.uses} مرات</span></div>
     `;
 
     if (customerObj.rankIndex < 4) {
-        document.getElementById("vipModalTarget").innerHTML = `متبقي على وصولك للرتبة الأعلى: <span class="eng-num" style="color:var(--danger)">${customerObj.target - customerObj.count}</span> عملية شراء.`;
+        document.getElementById("vipModalTarget").innerHTML = `الهدف القادم للعميل: <span class="eng-num" style="color:var(--danger)">${customerObj.target - customerObj.count}</span> عملية للرتبة التالية.`;
     } else {
-        document.getElementById("vipModalTarget").innerHTML = `مبروك! وصلت لأعلى رتبة في متجرنا.`;
+        document.getElementById("vipModalTarget").innerHTML = `وصل العميل لأعلى رتبة ممكنة (ماسي).`;
+    }
+
+    let cleanPhone = (phone || '').replace(/\D/g, '');
+    let waBtn = document.getElementById("vipWhatsAppBtn");
+    let msg = `مرحباً ${esc(customerObj.name)} 🎉\nبسبب شرائك المستمر من متجرنا، ارتفعت رتبتك وصرت بالنسبة إلنا "${rankObj.name}"!\n\nبتقدر تستمتع بمميزات الرتبة في عملياتك الجاية:\n- فرصة أكبر لكود خصم بزيادة ${rankObj.chance}%\n- الخصم صار أعلى بزيادة ${rankObj.discount}%\n- صلاحية أكوادك زادت ${rankObj.days} أيام\n- بتقدر تستخدم الكود ${rankObj.uses} مرات\n\nشكراً لثقتك فينا 💙`;
+    
+    if (!cleanPhone) {
+        waBtn.style.display = "none";
+    } else {
+        waBtn.style.display = "flex";
+        waBtn.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
+        waBtn.onclick = () => document.getElementById('vipUpgradeModal').style.display='none';
     }
 
     document.getElementById("vipUpgradeModal").style.display = "flex";
+}
+
+function openVipInfoModal() {
+    let select = document.getElementById("vipInfoSelect");
+    select.innerHTML = "";
+    VIP_RANKS.forEach((r, idx) => {
+        let opt = document.createElement("option");
+        opt.value = idx;
+        opt.text = r.name;
+        select.appendChild(opt);
+    });
+    select.value = "0"; 
+    updateVipInfoDetails();
+    document.getElementById("vipInfoModal").style.display = "flex";
+}
+
+function updateVipInfoDetails() {
+    let idx = parseInt(document.getElementById("vipInfoSelect").value);
+    let r = VIP_RANKS[idx];
+    document.getElementById("vipInfoDetails").innerHTML = `
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px; font-size:20px; font-weight:bold; color:${r.color}">
+            <span>${r.icon}</span> <span>${r.name}</span>
+        </div>
+        <div style="display:grid; gap:8px;">
+            <div style="display:flex; justify-content:space-between; border-bottom:1px dashed var(--border-color); padding-bottom:5px;">
+                <span>عمليات الشراء المطلوبة للوصول:</span>
+                <span class="eng-num" style="font-weight:bold; color:var(--primary)">${r.min}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; border-bottom:1px dashed var(--border-color); padding-bottom:5px;">
+                <span>زيادة فرصة كود الخصم:</span>
+                <span class="eng-num" style="font-weight:bold; color:var(--success)">+${r.chance}%</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; border-bottom:1px dashed var(--border-color); padding-bottom:5px;">
+                <span>زيادة نسبة الخصم:</span>
+                <span class="eng-num" style="font-weight:bold; color:var(--success)">+${r.discount}%</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; border-bottom:1px dashed var(--border-color); padding-bottom:5px;">
+                <span>أيام إضافية للصلاحية:</span>
+                <span class="eng-num" style="font-weight:bold; color:var(--success)">+${r.days}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+                <span>مرات استخدام الكود:</span>
+                <span class="eng-num" style="font-weight:bold; color:var(--success)">${r.uses}</span>
+            </div>
+        </div>
+    `;
+}
+
+function openAddVipModal() {
+    document.getElementById("addVipName").value = "";
+    document.getElementById("addVipPhone").value = "";
+    document.getElementById("addVipCount").value = "";
+    document.getElementById("addVipModal").style.display = "flex";
+}
+
+function saveManualVip() {
+    let name = document.getElementById("addVipName").value.trim() || "عميل";
+    let phone = document.getElementById("addVipPhone").value.trim();
+    let count = parseInt(document.getElementById("addVipCount").value);
+
+    if (!/^\+97\d{10}$/.test(phone)) return notify("رقم الجوال يجب أن يبدأ بـ +97 ويليه 10 أرقام", "error");
+    if (isNaN(count) || count < 1) return notify("أدخل عدد عمليات شراء صحيح (1 أو أكثر)", "error");
+
+    let vips = safeJSON(store.vipCustomers, {});
+    let assignedRank = 0;
+    let target = 1;
+    for (let i = VIP_RANKS.length - 1; i >= 0; i--) {
+        if (count >= VIP_RANKS[i].min) {
+            assignedRank = i;
+            break;
+        }
+    }
+    
+    if (assignedRank < 4) {
+        target = VIP_RANKS[assignedRank + 1].min;
+    } else {
+        target = count;
+    }
+
+    vips[phone] = {
+        name: name, count: count, rankIndex: assignedRank, target: target, lastPurchaseTime: Date.now()
+    };
+
+    store.vipCustomers = JSON.stringify(vips);
+    fbSave("vipCustomers", vips);
+    
+    logAction(`إضافة رتبة يدوية للعميل ${name} (${phone}) بعدد ${count}`, 'danger');
+    document.getElementById("addVipModal").style.display = "none";
+    refreshVip();
+    notify("تمت إضافة العميل والرتبة بنجاح");
+}
+
+async function deleteAllVips() {
+    if(currentUser.role !== 'admin') return notify("للأدمن فقط","error");
+    let ok = await showConfirm("مسح جميع الرتب", "هل أنت متأكد من تصفير ومسح جميع رتب العملاء (VIP) من النظام؟", "مسح الكل", "إلغاء", '<i class="fas fa-exclamation-triangle"></i>');
+    if(!ok) return;
+    
+    store.vipCustomers = "{}";
+    fbSave("vipCustomers", {});
+    logAction("قام الأدمن بمسح جميع رتب العملاء (VIP)", 'danger');
+    refreshVip();
+    notify("تم مسح جميع الرتب وتصفيرها");
 }
 // ─── تصنيف مفاتيح البيانات ──────────────────────────────────────
 // SCALAR: يُخزَّن كحقل في المستند الرئيسي (wallets وinvest وsettings)
@@ -2731,6 +2890,8 @@ function applyRBAC() {
     
     document.getElementById("btnDeleteAllDiscounts").classList.add("hidden");
     document.getElementById("btnGenerateCoupon").classList.add("hidden");
+    document.getElementById("btnAddVip").classList.add("hidden");
+    document.getElementById("btnDeleteAllVip").classList.add("hidden");
 
     let tfRes = document.getElementById("tfResult");
     if(tfRes) tfRes.readOnly = false;
@@ -2767,6 +2928,8 @@ function applyRBAC() {
         
         document.getElementById("btnDeleteAllDiscounts").classList.remove("hidden");
         document.getElementById("btnGenerateCoupon").classList.remove("hidden");
+        document.getElementById("btnAddVip").classList.remove("hidden");
+        document.getElementById("btnDeleteAllVip").classList.remove("hidden");
     } 
     else if (role === 'employee') {
         if(tfRes) tfRes.readOnly = true;
@@ -3486,14 +3649,15 @@ function _executePurchase(paid, paidCur, duration, settings, stItem, cleanName, 
     }
     
     // تسلسل النوافذ المنبثقة للـ VIP والكود
+// تسلسل النوافذ المنبثقة للـ VIP والكود (تم منع الظهور للزبون العادي > 0)
     if (generatedCoupon && vipRankChanged && vipCustomerObj.rankIndex > 0) {
         showCouponModal(generatedCoupon, customerPhoneVal, () => {
-            setTimeout(() => { showVipUpgradeModal(vipCustomerObj, vipNewRank); }, 5000);
+            setTimeout(() => { showVipUpgradeModal(vipCustomerObj, vipNewRank, customerPhoneVal); }, 5000);
         });
     } else if (generatedCoupon) {
         showCouponModal(generatedCoupon, customerPhoneVal, null);
     } else if (vipRankChanged && vipCustomerObj.rankIndex > 0) {
-        showVipUpgradeModal(vipCustomerObj, vipNewRank);
+        showVipUpgradeModal(vipCustomerObj, vipNewRank, customerPhoneVal);
     }
     
     currentPage.history = 1;
@@ -3819,7 +3983,8 @@ function refreshHistory(){
     
     let rows = "";
     paginated.forEach(item => {
-        let phoneD = isRestricted ? '----' : maskPhone(item.phone);
+        let isViewerRole = currentUser && (currentUser.role === 'viewer' || currentUser.role === 'viewer_plus');
+        let phoneD = isViewerRole ? maskPhone(item.phone) : esc(item.phone);
         let subD = isRestricted ? '----' : `<span class="badge badge-info">${esc(item.sub)}</span>`;
         let paidD = isRestricted ? '----' : esc(item.paid);
         let costD = isRestricted ? '----' : esc(item.cost);
@@ -5291,6 +5456,7 @@ window.onload = init;
 </script>
 </body>
 </html>
+
 
 
 
